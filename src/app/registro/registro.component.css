@@ -1,0 +1,77 @@
+:host {
+  display: block;
+}
+
+.auth-page {
+  min-height: 100vh;
+  background: #f7f6f8;
+  padding: 16px;
+}
+
+.auth-shell {
+  width: min(411px, 100%);
+  min-height: 366px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e7e6ea;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 28px 24px;
+}
+
+.auth-header h1 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #2f2f33;
+}
+
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-weight: 700;
+  background: #3a3a3f;
+}
+
+.form-label {
+  color: #45464c;
+  font-size: 0.88rem;
+  margin-bottom: 0.35rem;
+}
+
+.form-control {
+  border-color: #d3d4da;
+  background-color: #fbfbfc;
+  font-size: 0.96rem;
+  border-radius: 10px;
+  min-height: 47px;
+}
+
+.form-control:focus {
+  border-color: #8a8d99;
+  box-shadow: 0 0 0 0.15rem rgba(70, 70, 74, 0.14);
+}
+
+.auth-submit {
+  margin-top: 2px;
+  border-radius: 10px;
+  min-height: 48px;
+}
+
+.btn-dark {
+  background: #2f3137;
+  border: 0;
+}
+
+.btn-dark:hover {
+  background: #23252b;
+}
+
+@media (max-width: 460px) {
+  .auth-shell {
+    border-radius: 14px;
+    padding: 24px 18px;
+  }
+}

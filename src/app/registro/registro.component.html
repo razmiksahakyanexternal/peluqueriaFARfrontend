@@ -1,0 +1,137 @@
+<div class="container-fluid px-4 px-lg-5 d-flex justify-content-center align-items-center vh-100">
+  <div class="auth-card shadow-sm border rounded-3 bg-white" style="max-width: 820px; width: 100%;">
+    <div class="p-5">
+      <h2 class="fw-bold mb-4" style="color: #333;">Crear cuenta</h2>
+
+      <p class="text-muted mb-3" style="font-size: 0.85rem;">Completa tus datos para registrarte</p>
+
+      <form #registroForm="ngForm" (ngSubmit)="onSubmit(registroForm)" novalidate>
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted">🙂</span>
+              <input
+                type="text"
+                class="form-control border-start-0 ps-0"
+                placeholder="Nombre"
+                name="nombre"
+                ngModel
+                required
+                #nombreModel="ngModel"
+                [class.is-invalid]="(submitted || nombreModel.touched) && nombreModel.invalid"
+              >
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || nombreModel.touched) && nombreModel.invalid">
+              El nombre es obligatorio.
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted">📝</span>
+              <input
+                type="text"
+                class="form-control border-start-0 ps-0"
+                placeholder="Apellidos"
+                name="apellidos"
+                ngModel
+                required
+                #apellidosModel="ngModel"
+                [class.is-invalid]="(submitted || apellidosModel.touched) && apellidosModel.invalid"
+              >
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || apellidosModel.touched) && apellidosModel.invalid">
+              Los apellidos son obligatorios.
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group mb-3">
+          <span class="input-group-text bg-white border-end-0 text-muted">📧</span>
+          <input
+            type="email"
+            class="form-control border-start-0 ps-0"
+            placeholder="Email"
+            name="email"
+            ngModel
+            required
+            email
+            #emailModel="ngModel"
+            [class.is-invalid]="(submitted || emailModel.touched) && emailModel.invalid"
+          >
+        </div>
+        <div class="text-danger small mt-n2 mb-2" *ngIf="(submitted || emailModel.touched) && emailModel.errors?.['required']">
+          El email es obligatorio.
+        </div>
+        <div class="text-danger small mt-n2 mb-2" *ngIf="(submitted || emailModel.touched) && emailModel.errors?.['email']">
+          Formato de email no valido.
+        </div>
+
+        <div class="input-group mb-3">
+          <span class="input-group-text bg-white border-end-0 text-muted">📱</span>
+          <input type="tel" class="form-control border-start-0 ps-0" placeholder="Telefono (opcional)" name="telefono" ngModel>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted">🔒</span>
+              <input
+                type="password"
+                class="form-control border-start-0 ps-0"
+                placeholder="Contrasena"
+                name="password"
+                ngModel
+                required
+                minlength="4"
+                #passwordModel="ngModel"
+                [class.is-invalid]="(submitted || passwordModel.touched) && passwordModel.invalid"
+              >
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || passwordModel.touched) && passwordModel.errors?.['required']">
+              La contrasena es obligatoria.
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || passwordModel.touched) && passwordModel.errors?.['minlength']">
+              La contrasena debe tener al menos 4 caracteres.
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted">✅</span>
+              <input
+                type="password"
+                class="form-control border-start-0 ps-0"
+                placeholder="Confirmar contrasena"
+                name="confirmPassword"
+                ngModel
+                required
+                #confirmPasswordModel="ngModel"
+                [class.is-invalid]="(submitted || confirmPasswordModel.touched) && (confirmPasswordModel.invalid || (confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value))"
+              >
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || confirmPasswordModel.touched) && confirmPasswordModel.errors?.['required']">
+              Debes confirmar la contrasena.
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || confirmPasswordModel.touched) && confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value">
+              Las contrasenas no coinciden.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn w-100 py-3 text-white fs-6 fw-medium mb-4"
+          [disabled]="registroForm.invalid || (confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value)"
+          style="background-color: #d17871; border: none; border-radius: 6px;">
+          Crear cuenta
+        </button>
+
+        <hr class="mt-4 mb-4 border-secondary opacity-25">
+
+        <div class="text-center mt-3">
+          <span class="text-muted fs-6">Ya tienes cuenta? </span>
+          <a routerLink="/inicio-sesion" class="text-decoration-none fw-bold fs-6" style="color: #6d9cc1;">Iniciar sesion ></a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
