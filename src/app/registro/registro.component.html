@@ -5,6 +5,13 @@
 
       <p class="text-muted mb-3" style="font-size: 0.85rem;">Completa tus datos para registrarte</p>
 
+      <div *ngIf="successMessage" class="alert alert-success" role="alert">
+        {{ successMessage }}
+      </div>
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+
       <form #registroForm="ngForm" (ngSubmit)="onSubmit(registroForm)" novalidate>
         <div class="row g-3 mb-3">
           <div class="col-12 col-md-6">

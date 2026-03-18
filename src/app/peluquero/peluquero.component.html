@@ -1,0 +1,129 @@
+<section class="agenda-page">
+  <div class="agenda-shell">
+    <aside class="agenda-sidebar">
+      <div>
+        <div class="brand-row">
+          <div class="brand-icon">✂</div>
+          <div>
+            <h1>Peluqueria</h1>
+            <p>Panel del Peluquero</p>
+          </div>
+        </div>
+
+        <nav class="menu-list">
+          <a *ngFor="let item of navItems; trackBy: trackByLabel" href="#" class="menu-item" [class.active]="item.active">
+            {{ item.label }}
+          </a>
+        </nav>
+      </div>
+
+      <button type="button" class="logout-btn" (click)="logout()">Cerrar Sesion</button>
+    </aside>
+
+    <main class="agenda-main">
+      <header class="agenda-header">
+        <div class="title-box">
+          <button type="button" class="hamburger-btn">☰</button>
+          <h2>Agenda</h2>
+        </div>
+
+        <div class="user-box">
+          <strong>Luis Martinez</strong>
+          <span>Peluquero</span>
+        </div>
+      </header>
+
+      <section class="toolbar-row">
+        <div class="toolbar-left">
+          <button type="button" class="ghost-btn">‹</button>
+          <button type="button" class="month-btn">Abril 2024</button>
+          <button type="button" class="ghost-btn">›</button>
+          <button type="button" class="today-btn">Hoy</button>
+        </div>
+
+        <div class="toolbar-right">
+          <div class="view-toggle">
+            <button type="button" class="toggle-btn active">Dia</button>
+            <button type="button" class="toggle-btn">Semana</button>
+          </div>
+
+          <button type="button" class="add-btn">+ Anadir Cita ▾</button>
+        </div>
+      </section>
+
+      <section class="kpi-row">
+        <article class="kpi-card" *ngFor="let kpi of kpis; trackBy: trackByKpi">
+          <p>{{ kpi.title }}</p>
+          <strong>{{ kpi.value }}</strong>
+          <span>{{ kpi.hint }}</span>
+        </article>
+      </section>
+
+      <section class="agenda-grid">
+        <article class="week-card">
+          <h3>Semana del 15 - 21 Abril 2024</h3>
+
+          <div class="calendar-grid">
+            <div class="time-head"></div>
+
+            <div
+              class="day-head"
+              *ngFor="let day of weekDays; trackBy: trackByDay"
+              [class.selected]="day.selected"
+              [class.weekend]="day.weekend"
+            >
+              <span>{{ day.name }}</span>
+              <strong>{{ day.date }}</strong>
+            </div>
+
+            <ng-container *ngFor="let slot of timeSlots; trackBy: trackBySlot">
+              <div class="time-cell">{{ slot }}</div>
+
+              <ng-container *ngFor="let day of weekDays; trackBy: trackByDay">
+                <div class="slot-cell"></div>
+              </ng-container>
+            </ng-container>
+
+            <article
+              class="event-chip"
+              *ngFor="let event of calendarEvents; trackBy: trackByEvent"
+              [class.free]="event.variant === 'libre'"
+              [class.closed]="event.variant === 'cerrado'"
+              [style.gridColumn]="event.day + 2"
+              [style.gridRow]="event.start + 2 + ' / span ' + event.span"
+            >
+              {{ event.title }}
+            </article>
+          </div>
+        </article>
+
+        <div class="side-column">
+          <article class="day-card">
+            <h3>Jueves, 18 Abril 2024</h3>
+
+            <div class="day-list">
+              <div class="day-item" *ngFor="let appointment of dayAppointments; trackBy: trackByTime">
+                <span class="avatar">{{ initials(appointment.name) }}</span>
+
+                <div class="appointment-copy">
+                  <strong>{{ appointment.time }}</strong>
+                  <span>{{ appointment.name }}</span>
+                </div>
+
+                <span class="lock" *ngIf="appointment.status === 'blocked'">🔒</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="legend-card">
+            <h4>Leyenda</h4>
+            <div class="legend-item"><span class="dot cita"></span><span>Cita</span></div>
+            <div class="legend-item"><span class="dot libre"></span><span>Dia Libre</span></div>
+            <div class="legend-item"><span class="dot cerrado"></span><span>Cerrado</span></div>
+            <button type="button" class="block-btn">+ Bloquear Hora</button>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</section>

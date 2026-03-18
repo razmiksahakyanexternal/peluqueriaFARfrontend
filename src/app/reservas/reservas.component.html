@@ -1,0 +1,91 @@
+<div class="reservas-container">
+  <!-- Pantalla de confirmación -->
+  <div class="reservas-card" *ngIf="citaConfirmada; else formularioReserva">
+    <div class="confirmation-content">
+      <div class="checkmark">✓</div>
+      <h1>Cita Confirmada</h1>
+      <p class="confirmation-date">{{ getFormattedDate() }}</p>
+      <button type="button" class="volver-btn" (click)="volverAlInicio()">Volver al Inicio</button>
+      <p class="confirmation-note">Te hemos enviado un email con la información de tu cita. ¡Te esperamos!</p>
+    </div>
+  </div>
+
+  <!-- Formulario de reserva -->
+  <ng-template #formularioReserva>
+  <div class="reservas-card">
+    <div class="reservas-header">
+      <h1>Reservar Cita</h1>
+      <button type="button" class="close-btn" (click)="volverAlInicio()">&times;</button>
+    </div>
+
+    <div class="reservas-content">
+      <!-- Calendario -->
+      <div class="calendar-section">
+        <div class="calendar-header">
+          <button type="button" class="nav-btn" (click)="previousMonth()">‹</button>
+          <h2>{{ getMonthYear() }}</h2>
+          <button type="button" class="nav-btn" (click)="nextMonth()">›</button>
+        </div>
+
+        <div class="calendar-grid">
+          <div class="day-label">Lun</div>
+          <div class="day-label">Mar</div>
+          <div class="day-label">Mié</div>
+          <div class="day-label">Jue</div>
+          <div class="day-label">Vie</div>
+          <div class="day-label">Sáb</div>
+          <div class="day-label">Dom</div>
+
+          <ng-container *ngFor="let day of getDaysOfMonth(currentDate)">
+            <button
+              *ngIf="day"
+              type="button"
+              class="calendar-day"
+              [class.disabled]="!isWeekday(day)"
+              [class.selected]="isSelected(day)"
+              [class.weekend]="!isWeekday(day)"
+              (click)="selectDate(day)"
+              [disabled]="!isWeekday(day)"
+            >
+              {{ day }}
+            </button>
+            <div *ngIf="!day" class="calendar-empty"></div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Selector de horas -->
+      <div class="time-section">
+        <h3>Selecciona una hora:</h3>
+        <div class="time-grid">
+          <button
+            *ngFor="let time of availableHours"
+            type="button"
+            class="time-btn"
+            [class.selected]="selectedTime === time"
+            [disabled]="!selectedDate"
+            (click)="selectTime(time)"
+          >
+            {{ time }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Botón de confirmar -->
+      <button
+        type="button"
+        class="confirm-btn"
+        [disabled]="!selectedDate || !selectedTime"
+        (click)="confirmBooking()"
+      >
+        Confirmar Cita
+      </button>
+
+      <!-- Nota -->
+      <p class="note">
+        • Solo de lunes a viernes. Cada cita dura 15 minutos.
+      </p>
+    </div>
+  </div>
+  </ng-template>
+</div>

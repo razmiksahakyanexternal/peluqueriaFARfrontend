@@ -1,0 +1,331 @@
+:host {
+  display: block;
+}
+
+.reservas-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f5f7f9 0%, #e9edf1 100%);
+}
+
+.reservas-card {
+  width: 100%;
+  max-width: 500px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.reservas-header {
+  position: relative;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e6ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reservas-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #26313f;
+  text-align: center;
+}
+
+.close-btn {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.reservas-content {
+  padding: 1.5rem;
+}
+
+.calendar-section {
+  margin-bottom: 2rem;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.calendar-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #26313f;
+  flex: 1;
+  text-align: center;
+}
+
+.nav-btn {
+  background: transparent;
+  border: 1px solid #dbe1e8;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  color: #627184;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: #f0f3f7;
+  border-color: #cdd5de;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.day-label {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #8190a1;
+  padding: 0.5rem 0;
+}
+
+.calendar-day,
+.calendar-empty {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-day {
+  background: #f7f9fb;
+  border: 1px solid #e0e6ed;
+  color: #26313f;
+}
+
+.calendar-day:hover:not(:disabled) {
+  background: #f0f3f7;
+  border-color: #cdd5de;
+}
+
+.calendar-day:disabled,
+.calendar-day.disabled {
+  color: #cdd5de;
+  background: #fafbfc;
+  cursor: not-allowed;
+}
+
+.calendar-day.weekend {
+  color: #999;
+}
+
+.calendar-day.selected {
+  background: #5d9f97;
+  border-color: #5d9f97;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.calendar-empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.time-section {
+  margin-bottom: 1.5rem;
+}
+
+.time-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #26313f;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.time-btn {
+  padding: 0.5rem 0.25rem;
+  border: 1px solid #dbe1e8;
+  border-radius: 6px;
+  background: #f7f9fb;
+  color: #627184;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.time-btn:hover:not(:disabled) {
+  background: #f0f3f7;
+  border-color: #cdd5de;
+}
+
+.time-btn:disabled {
+  color: #cdd5de;
+  background: #fafbfc;
+  cursor: not-allowed;
+}
+
+.time-btn.selected {
+  background: #2a7de1;
+  border-color: #2a7de1;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.confirm-btn {
+  width: 100%;
+  padding: 0.95rem;
+  background: #5d9f97;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: #4a8a82;
+  box-shadow: 0 4px 12px rgba(93, 159, 151, 0.3);
+}
+
+.confirm-btn:disabled {
+  background: #d0d5db;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.note {
+  font-size: 0.85rem;
+  color: #8190a1;
+  margin: 0;
+  text-align: center;
+}
+
+.confirmation-content {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.checkmark {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.5rem;
+  background: #5d9f97;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.confirmation-content h1 {
+  margin: 0 0 1rem 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #26313f;
+}
+
+.confirmation-date {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.95rem;
+  color: #7d8b9a;
+  line-height: 1.5;
+}
+
+.volver-btn {
+  width: 100%;
+  padding: 0.95rem;
+  background: #5d9f97;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1.5rem;
+}
+
+.volver-btn:hover {
+  background: #4a8a82;
+  box-shadow: 0 4px 12px rgba(93, 159, 151, 0.3);
+}
+
+.confirmation-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8190a1;
+  line-height: 1.5;
+}
+
+@media (max-width: 576px) {
+  .reservas-card {
+    border-radius: 0;
+  }
+
+  .reservas-container {
+    padding: 0;
+  }
+
+  .reservas-header {
+    padding: 1rem;
+  }
+
+  .reservas-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .reservas-content {
+    padding: 1rem;
+  }
+
+  .time-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .calendar-day {
+    font-size: 0.85rem;
+  }
+}

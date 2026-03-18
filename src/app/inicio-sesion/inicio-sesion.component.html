@@ -4,25 +4,52 @@
     <div class="p-5">
       <h2 class="fw-bold mb-4" style="color: #333;">Iniciar Sesión</h2>
       
-      <p class="text-muted mb-3" style="font-size: 0.85rem;">ladue gmail seroit</p>
+      <p class="text-muted mb-3" style="font-size: 0.85rem;">Inicia sesión con tu cuenta</p>
 
-      <form>
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="alert alert-success" role="alert">
+        {{ successMessage }}
+      </div>
+
+      <form #loginForm="ngForm" (ngSubmit)="onSubmit(loginForm)">
         <div class="input-group mb-3">
           <span class="input-group-text bg-white border-end-0 text-muted">
             📧
           </span>
-          <input type="email" class="form-control border-start-0 ps-0" placeholder="Email">
+          <input
+            type="email"
+            class="form-control border-start-0 ps-0"
+            name="email"
+            placeholder="Email"
+            ngModel
+            required
+            email
+          >
         </div>
 
         <div class="input-group mb-4">
           <span class="input-group-text bg-white border-end-0 text-muted">
             🔒
           </span>
-          <input type="password" class="form-control border-start-0 ps-0" placeholder="Contraseña">
+          <input
+            type="password"
+            class="form-control border-start-0 ps-0"
+            name="password"
+            placeholder="Contraseña"
+            ngModel
+            required
+          >
         </div>
 
-        <button type="button" class="btn w-100 py-3 text-white fs-6 fw-medium mb-4" 
-                style="background-color: #d17871; border: none; border-radius: 6px;">
+        <button
+          type="submit"
+          class="btn w-100 py-3 text-white fs-6 fw-medium mb-4"
+          [disabled]="loginForm.invalid"
+          style="background-color: #d17871; border: none; border-radius: 6px;"
+        >
           Iniciar Sesión
         </button>
 
