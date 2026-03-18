@@ -84,6 +84,7 @@
   border-radius: 4px;
   padding: 0.53rem 0.98rem;
   font-size: 1.02rem;
+<<<<<<< HEAD
   cursor: pointer;
 }
 
@@ -96,6 +97,8 @@
   background: #e5be5f;
   border-color: #f0d48e;
   color: #2d2a22;
+=======
+>>>>>>> ecd83d366b2769169e7dfaffaaa54ac9c4f81b0b
 }
 
 .hero-content {
@@ -147,6 +150,7 @@
   color: #f5f5f5;
 }
 
+<<<<<<< HEAD
 .btn-appointments {
   background: #e5be5f;
   color: #2d2a22;
@@ -157,6 +161,8 @@
   color: #2d2a22;
 }
 
+=======
+>>>>>>> ecd83d366b2769169e7dfaffaaa54ac9c4f81b0b
 .btn-login {
   background: rgba(40, 40, 40, 0.45);
   color: #f8f8f8;
