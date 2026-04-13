@@ -6,25 +6,28 @@
       
       <p class="text-muted mb-3" style="font-size: 0.85rem;">ladue gmail seroit</p>
 
-      <form>
+      <form #loginForm="ngForm" (ngSubmit)="onSubmit(loginForm)" novalidate>
         <div class="input-group mb-3">
           <span class="input-group-text bg-white border-end-0 text-muted">
             📧
           </span>
-          <input type="email" class="form-control border-start-0 ps-0" placeholder="Email">
+          <input type="email" class="form-control border-start-0 ps-0" placeholder="Email" name="email" ngModel required>
         </div>
 
         <div class="input-group mb-4">
           <span class="input-group-text bg-white border-end-0 text-muted">
             🔒
           </span>
-          <input type="password" class="form-control border-start-0 ps-0" placeholder="Contraseña">
+          <input type="password" class="form-control border-start-0 ps-0" placeholder="Contrasena" name="password" ngModel required>
         </div>
 
-        <button type="button" class="btn w-100 py-3 text-white fs-6 fw-medium mb-4" 
+        <button type="submit" class="btn w-100 py-3 text-white fs-6 fw-medium mb-4" 
                 style="background-color: #d17871; border: none; border-radius: 6px;">
           Iniciar Sesión
         </button>
+
+        <p class="text-danger" *ngIf="errorMessage">{{ errorMessage }}</p>
+        <p class="text-success" *ngIf="successMessage">{{ successMessage }}</p>
 
         <div class="d-flex align-items-center mb-4">
           <hr class="flex-grow-1 border-secondary opacity-25">
