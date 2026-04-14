@@ -80,8 +80,6 @@ export class AuthService {
 
   getRole(): string | null {
     return localStorage.getItem(this.roleKey);
-    localStorage.removeItem(this.userNameKey);
-    localStorage.removeItem(this.userSurnameKey);
   }
 
   getRedirectRouteByRole(): string {
@@ -104,5 +102,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
+    localStorage.removeItem(this.userNameKey);
+    localStorage.removeItem(this.userSurnameKey);
   }
 }

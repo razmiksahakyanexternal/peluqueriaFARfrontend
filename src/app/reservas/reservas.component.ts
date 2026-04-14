@@ -73,8 +73,18 @@ export class ReservasComponent implements OnInit {
     return dayOfWeek >= 1 && dayOfWeek <= 5;
   }
 
+  isPastDate(day: number | null): boolean {
+    if (!day) return false;
+    const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+    // Normalizar a medianoche para comparar solo fechas
+    date.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  }
+
   selectDate(day: number | null): void {
-    if (day && this.isWeekday(day)) {
+    if (day && this.isWeekday(day) && !this.isPastDate(day)) {
       this.selectedDate = new Date(
         this.currentDate.getFullYear(),
         this.currentDate.getMonth(),
@@ -156,14 +166,21 @@ export class ReservasComponent implements OnInit {
   }
 
   previousMonth(): void {
-    this.currentDate = new Date(
-      this.currentDate.getFullYear(),
-      this.currentDate.getMonth() - 1,
-      1
-    );
-    this.selectedDate = null;
-    this.selectedTime = null;
-    this.occupiedHours.clear();
+    const today = new Date();
+    const currentMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+    const previousMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // No permitir ir a meses anteriores al mes actual
+    if (currentMonth > previousMonth) {
+      this.currentDate = new Date(
+        this.currentDate.getFullYear(),
+        this.currentDate.getMonth() - 1,
+        1
+      );
+      this.selectedDate = null;
+      this.selectedTime = null;
+      this.occupiedHours.clear();
+    }
   }
 
   nextMonth(): void {
