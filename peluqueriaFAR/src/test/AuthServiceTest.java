@@ -12,9 +12,11 @@ import org.peluqueriaFAR.peluqueriaFAR.dto.RegisterRequest;
 import org.peluqueriaFAR.peluqueriaFAR.entities.User;
 import org.peluqueriaFAR.peluqueriaFAR.model.Role;
 import org.peluqueriaFAR.peluqueriaFAR.repository.UserRepository;
+import org.peluqueriaFAR.peluqueriaFAR.repository.VerificationTokenRepository;
 import org.peluqueriaFAR.peluqueriaFAR.security.GoogleTokenVerifier;
 import org.peluqueriaFAR.peluqueriaFAR.security.JwtUtil;
 import org.peluqueriaFAR.peluqueriaFAR.service.AuthService;
+import org.peluqueriaFAR.peluqueriaFAR.service.EmailService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,6 +36,12 @@ class AuthServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private VerificationTokenRepository verificationTokenRepository;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -49,21 +57,22 @@ class AuthServiceTest {
     private AuthService authService;
 
     @Test
-    void register_shouldSaveUserAndReturnToken() {
+    void register_shouldSaveUserAndSendVerificationEmail() {
         RegisterRequest request = new RegisterRequest("Carlos", "Perez", "carlos@example.com", "1234", "600000000");
 
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("hashedpwd");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(jwtUtil.generateToken(eq(request.getEmail()), eq(Role.CLIENT))).thenReturn("fake-token");
+        when(verificationTokenRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        AuthResponse response = authService.register(request);
+        var response = authService.register(request);
 
         assertNotNull(response);
-        assertEquals("fake-token", response.getToken());
-        assertEquals(Role.CLIENT.name(), response.getRole());
+        assertEquals("Se ha mandado un correo de verificación de la cuenta, si esta existe", response.getMessage());
 
         verify(userRepository, times(1)).save(any(User.class));
+        verify(verificationTokenRepository, times(1)).save(any());
+        verify(emailService, times(1)).sendVerificationEmail(eq(request.getEmail()), anyString(), anyString());
     }
 
     @Test
@@ -86,7 +95,7 @@ class AuthServiceTest {
         request.setEmail(email);
         request.setPassword(password);
 
-        User user = User.builder().email(email).role(Role.CLIENT).build();
+        User user = User.builder().email(email).role(Role.CLIENT).enabled(true).build();
 
         doNothing().when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
@@ -106,7 +115,7 @@ class AuthServiceTest {
         request.setEmail(email);
         request.setPassword("wrong");
 
-        User user = User.builder().email(email).role(Role.CLIENT).authProvider(User.AuthProvider.LOCAL).build();
+        User user = User.builder().email(email).role(Role.CLIENT).authProvider(User.AuthProvider.LOCAL).enabled(true).build();
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
         doThrow(new BadCredentialsException("Bad credentials")).when(authenticationManager)
                 .authenticate(any(UsernamePasswordAuthenticationToken.class));
@@ -137,7 +146,7 @@ class AuthServiceTest {
         request.setEmail(email);
         request.setPassword("password");
 
-        User user = User.builder().email(email).role(Role.CLIENT).authProvider(User.AuthProvider.GOOGLE).build();
+        User user = User.builder().email(email).role(Role.CLIENT).authProvider(User.AuthProvider.GOOGLE).enabled(true).build();
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> authService.login(request));

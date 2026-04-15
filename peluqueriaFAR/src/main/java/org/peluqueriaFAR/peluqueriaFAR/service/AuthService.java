@@ -6,9 +6,12 @@ import org.peluqueriaFAR.peluqueriaFAR.dto.AuthRequest;
 import org.peluqueriaFAR.peluqueriaFAR.dto.AuthResponse;
 import org.peluqueriaFAR.peluqueriaFAR.dto.GoogleAuthRequest;
 import org.peluqueriaFAR.peluqueriaFAR.dto.RegisterRequest;
+import org.peluqueriaFAR.peluqueriaFAR.dto.RegisterResponse;
 import org.peluqueriaFAR.peluqueriaFAR.entities.User;
+import org.peluqueriaFAR.peluqueriaFAR.entities.VerificationToken;
 import org.peluqueriaFAR.peluqueriaFAR.model.Role;
 import org.peluqueriaFAR.peluqueriaFAR.repository.UserRepository;
+import org.peluqueriaFAR.peluqueriaFAR.repository.VerificationTokenRepository;
 import org.peluqueriaFAR.peluqueriaFAR.security.GoogleTokenVerifier;
 import org.peluqueriaFAR.peluqueriaFAR.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +22,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
@@ -26,12 +30,16 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
@@ -49,7 +57,11 @@ public class AuthService {
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
 
-    public AuthResponse register(RegisterRequest request) {
+    @Value("${app.backend.url:http://localhost:8081}")
+    private String backendUrl;
+
+    @Transactional
+    public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("El email ya esta registrado");
         }
@@ -62,12 +74,20 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(Role.CLIENT)
                 .authProvider(User.AuthProvider.LOCAL)
-                .enabled(true)
+                .enabled(false)
                 .active(true)
                 .build();
 
         userRepository.save(user);
-        return buildAuthResponse(user);
+
+        VerificationToken verificationToken = createVerificationToken(user);
+        verificationTokenRepository.save(verificationToken);
+
+        String verificationUrl = backendUrl + "/auth/verify?token=" + URLEncoder.encode(verificationToken.getToken(), StandardCharsets.UTF_8);
+        String htmlBody = buildVerificationEmailBody(user.getName(), verificationUrl);
+        emailService.sendVerificationEmail(user.getEmail(), "Verifica tu cuenta de Peluquería FAR", htmlBody);
+
+        return new RegisterResponse("Se ha mandado un correo de verificación de la cuenta, si esta existe");
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -78,6 +98,10 @@ public class AuthService {
             throw new IllegalArgumentException("Esta cuenta ya está registrada con google");
         }
 
+        if (!Boolean.TRUE.equals(user.getEnabled())) {
+            throw new IllegalArgumentException("La cuenta no está verificada. Revisa tu correo de verificación.");
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -86,6 +110,40 @@ public class AuthService {
         }
 
         return buildAuthResponse(user);
+    }
+
+    public void validateLocalLoginEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("La cuenta no está creada"));
+
+        if (user.getAuthProvider() != User.AuthProvider.LOCAL) {
+            throw new IllegalArgumentException("Esta cuenta ya está registrada con google");
+        }
+
+        if (!Boolean.TRUE.equals(user.getEnabled())) {
+            throw new IllegalArgumentException("La cuenta no está verificada. Revisa tu correo de verificación.");
+        }
+    }
+
+    @Transactional
+    public void verifyAccount(String token) {
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Token de verificación inválido o expirado"));
+
+        if (verificationToken.getUsedAt() != null) {
+            throw new IllegalArgumentException("Este enlace de verificación ya se ha utilizado");
+        }
+
+        if (verificationToken.getExpiresAt() != null && verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("El enlace de verificación ha expirado");
+        }
+
+        User user = verificationToken.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        verificationToken.setUsedAt(LocalDateTime.now());
+        verificationTokenRepository.save(verificationToken);
     }
 
     public AuthResponse loginWithGoogle(GoogleAuthRequest request) {
@@ -187,6 +245,22 @@ public class AuthService {
     private AuthResponse buildAuthResponse(User user) {
         String jwtToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
         return new AuthResponse(jwtToken, user.getRole().name());
+    }
+
+    private VerificationToken createVerificationToken(User user) {
+        VerificationToken token = new VerificationToken();
+        token.setUser(user);
+        token.setToken(UUID.randomUUID().toString());
+        token.setExpiresAt(LocalDateTime.now().plusHours(24));
+        return token;
+    }
+
+    private String buildVerificationEmailBody(String name, String verificationUrl) {
+        return "<p>Hola " + (name != null ? name : "") + ",</p>"
+                + "<p>Gracias por registrarte en Peluquería FAR.</p>"
+                + "<p>Para activar tu cuenta, haz clic en el siguiente enlace:</p>"
+                + "<p><a href=\"" + verificationUrl + "\">Verificar mi cuenta</a></p>"
+                + "<p>Si no has solicitado este registro, ignora este correo.</p>";
     }
 
     private String resolveName(String givenName, String fullName, String fallback) {

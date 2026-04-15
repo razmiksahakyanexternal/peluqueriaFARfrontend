@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.peluqueriaFAR.peluqueriaFAR.dto.*;
 import org.peluqueriaFAR.peluqueriaFAR.service.AuthService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -21,15 +22,30 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     private final AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            AuthResponse response = authService.register(request);
+            RegisterResponse response = authService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<Void> verifyAccount(@RequestParam("token") String token) {
+        try {
+            authService.verifyAccount(token);
+            URI redirectUri = URI.create(frontendUrl + "/inicio-sesion?verified=true");
+            return ResponseEntity.status(HttpStatus.FOUND).location(redirectUri).build();
+        } catch (IllegalArgumentException e) {
+            URI redirectUri = URI.create(frontendUrl + "/inicio-sesion?verified=false&error=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8));
+            return ResponseEntity.status(HttpStatus.FOUND).location(redirectUri).build();
         }
     }
 
@@ -40,6 +56,21 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("El correo es obligatorio"));
+        }
+
+        try {
+            authService.validateLocalLoginEmail(email);
+            return ResponseEntity.ok(Map.of("message", "Cuenta local encontrada"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
         }
     }
 
