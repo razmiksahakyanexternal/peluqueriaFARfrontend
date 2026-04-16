@@ -7,9 +7,16 @@
 
     <div class="mis-citas-content" *ngIf="appointments.length > 0; else emptyState">
       <article class="appointment-item" *ngFor="let appointment of appointments">
-        <h3>{{ formatAppointmentDate(appointment.appointmentDate) }}</h3>
-        <p>{{ appointment.startTime }}</p>
+        <div class="appointment-info">
+          <h3>{{ formatAppointmentDate(appointment.appointmentDate) }}</h3>
+          <p>{{ appointment.startTime }}</p>
+        </div>
+        <button type="button" class="cancel-btn" (click)="cancelAppointment(appointment)" [disabled]="isLoading">
+          Cancelar
+        </button>
       </article>
+      <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="success-message" *ngIf="successMessage">{{ successMessage }}</p>
     </div>
 
     <ng-template #emptyState>

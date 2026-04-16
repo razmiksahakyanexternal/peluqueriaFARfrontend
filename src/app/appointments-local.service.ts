@@ -68,6 +68,17 @@ export class AppointmentsLocalService {
     return `${this.storagePrefix}-${email}`;
   }
 
+  cancelAppointment(appointmentId: string): void {
+    const email = this.getCurrentUserEmail();
+    if (!email) {
+      throw new Error('No hay un usuario autenticado.');
+    }
+
+    let appointments = this.getMyAppointments();
+    appointments = appointments.filter(app => app.id !== appointmentId);
+    localStorage.setItem(this.storageKey(email), JSON.stringify(appointments));
+  }
+
   private getCurrentUserEmail(): string | null {
     const token = this.authService.getToken();
     if (!token) {

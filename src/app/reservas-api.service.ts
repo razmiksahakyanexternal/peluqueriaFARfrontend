@@ -42,5 +42,12 @@ export class ReservasApiService {
 			params: { date: appointmentDate },
 		});
 	}
+
+	cancelAppointment(appointmentId: string, token: string): Observable<void> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.delete<void>(`${this.baseUrl}/${appointmentId}`, { headers });
+	}
 }
 

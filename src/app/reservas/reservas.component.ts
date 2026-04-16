@@ -70,7 +70,16 @@ export class ReservasComponent implements OnInit {
     if (!day) return false;
     const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
     const dayOfWeek = date.getDay();
-    return dayOfWeek >= 1 && dayOfWeek <= 5;
+    return dayOfWeek >= 1 && dayOfWeek <= 5 && !this.isPastDate(day);
+  }
+
+  isPastDate(day: number | null): boolean {
+    if (!day) return false;
+    const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date < today;
   }
 
   selectDate(day: number | null): void {
@@ -156,14 +165,21 @@ export class ReservasComponent implements OnInit {
   }
 
   previousMonth(): void {
-    this.currentDate = new Date(
+    const newDate = new Date(
       this.currentDate.getFullYear(),
       this.currentDate.getMonth() - 1,
       1
     );
-    this.selectedDate = null;
-    this.selectedTime = null;
-    this.occupiedHours.clear();
+    const today = new Date();
+    today.setDate(1);
+    today.setHours(0, 0, 0, 0);
+    
+    if (newDate >= today) {
+      this.currentDate = newDate;
+      this.selectedDate = null;
+      this.selectedTime = null;
+      this.occupiedHours.clear();
+    }
   }
 
   nextMonth(): void {
@@ -183,6 +199,12 @@ export class ReservasComponent implements OnInit {
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
     return `${months[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
+  }
+
+  isCurrentMonth(): boolean {
+    const today = new Date();
+    return this.currentDate.getFullYear() === today.getFullYear() &&
+           this.currentDate.getMonth() === today.getMonth();
   }
 
   private toIsoDate(date: Date): string {

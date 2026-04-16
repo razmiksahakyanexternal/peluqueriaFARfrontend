@@ -21,7 +21,7 @@
     <div class="reservas-content">
       <div class="calendar-section">
         <div class="calendar-header">
-          <button type="button" class="nav-btn" (click)="previousMonth()">‹</button>
+          <button type="button" class="nav-btn" (click)="previousMonth()" [disabled]="isCurrentMonth()">‹</button>
           <h2>{{ getMonthYear() }}</h2>
           <button type="button" class="nav-btn" (click)="nextMonth()">›</button>
         </div>
@@ -43,6 +43,7 @@
               [class.disabled]="!isWeekday(day)"
               [class.selected]="isSelected(day)"
               [class.weekend]="!isWeekday(day)"
+              [class.past]="isPastDate(day)"
               (click)="selectDate(day)"
               [disabled]="!isWeekday(day)">
               {{ day }}
