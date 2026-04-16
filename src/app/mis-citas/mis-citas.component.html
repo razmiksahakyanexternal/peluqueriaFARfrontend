@@ -5,17 +5,30 @@
       <button type="button" class="close-btn" (click)="volverAlInicio()">&times;</button>
     </div>
 
-    <div class="mis-citas-content" *ngIf="appointments.length > 0; else emptyState">
-      <article class="appointment-item" *ngFor="let appointment of appointments">
-        <h3>{{ formatAppointmentDate(appointment.appointmentDate) }}</h3>
-        <p>{{ appointment.startTime }}</p>
-      </article>
+    <div class="mis-citas-content" *ngIf="errorMessage; else appointmentsState">
+      <p class="error-copy">{{ errorMessage }}</p>
     </div>
 
-    <ng-template #emptyState>
-      <div class="mis-citas-content">
-        <p class="empty-copy">Aun no tienes citas reservadas.</p>
+    <ng-template #appointmentsState>
+      <div class="mis-citas-content" *ngIf="loading">
+        <p class="loading-copy">Cargando tus citas...</p>
       </div>
+
+      <div class="mis-citas-content" *ngIf="!loading && appointments.length > 0; else emptyState">
+        <p class="appointments-count">Total citas: {{ appointments.length }}</p>
+        <article class="appointment-item" *ngFor="let appointment of appointments">
+          <h3>{{ formatAppointmentDate(appointment.appointmentDate) }}</h3>
+          <p><strong>Hora:</strong> {{ appointment.startTime }} - {{ appointment.endTime }}</p>
+          <p><strong>Cliente:</strong> {{ appointment.guestName || 'N/A' }}</p>
+        </article>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="mis-citas-content">
+          <p class="empty-copy">Aún no tienes citas reservadas.</p>
+          <button type="button" class="refresh-btn" (click)="loadAppointments()">Volver a cargar</button>
+        </div>
+      </ng-template>
     </ng-template>
   </div>
 </div>

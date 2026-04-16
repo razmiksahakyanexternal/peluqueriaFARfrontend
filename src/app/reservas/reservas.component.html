@@ -40,11 +40,20 @@
               *ngIf="day"
               type="button"
               class="calendar-day"
+<<<<<<< Updated upstream
               [class.disabled]="!isWeekday(day) || isPastDate(day)"
               [class.selected]="isSelected(day)"
               [class.weekend]="!isWeekday(day)"
               (click)="selectDate(day)"
               [disabled]="!isWeekday(day) || isPastDate(day)">
+=======
+              [class.disabled]="!isWeekday(day)"
+              [class.past-date]="isWeekday(day) && !isFutureDate(day)"
+              [class.selected]="isSelected(day)"
+              [class.weekend]="!isWeekday(day)"
+              (click)="selectDate(day)"
+              [disabled]="!isWeekday(day) || (isWeekday(day) && !isFutureDate(day))">
+>>>>>>> Stashed changes
               {{ day }}
             </button>
             <div *ngIf="!day" class="calendar-empty"></div>

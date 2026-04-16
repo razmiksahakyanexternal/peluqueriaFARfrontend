@@ -18,6 +18,14 @@ export interface CreateAppointmentResponse {
 	guestName?: string;
 }
 
+export interface AppointmentItem {
+	id: number;
+	appointmentDate: string;
+	startTime: string;
+	endTime: string;
+	guestName?: string;
+}
+
 @Injectable({
 	providedIn: 'root',
 })
@@ -41,6 +49,13 @@ export class ReservasApiService {
 			headers,
 			params: { date: appointmentDate },
 		});
+	}
+
+	getMyAppointments(token: string): Observable<AppointmentItem[]> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<AppointmentItem[]>(`${this.baseUrl}/my`, { headers });
 	}
 }
 

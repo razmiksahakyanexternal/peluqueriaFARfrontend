@@ -95,6 +95,13 @@
   border-color: #5d9f97;
 }
 
+.calendar-day.past-date {
+  background: #f0f0f0;
+  color: #ccc;
+  cursor: not-allowed;
+  border-color: #ddd;
+}
+
 .time-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { AppointmentsLocalService, StoredAppointment } from '../appointments-local.service';
 import { AuthService } from '../auth.service';
+import { ReservasApiService, AppointmentItem } from '../reservas-api.service';
 
 @Component({
   selector: 'app-mis-citas',
@@ -10,12 +10,15 @@ import { AuthService } from '../auth.service';
   standalone: false
 })
 export class MisCitasComponent implements OnInit {
-  appointments: StoredAppointment[] = [];
+  appointments: AppointmentItem[] = [];
+  errorMessage: string | null = null;
+  loading = false;
 
   constructor(
     private authService: AuthService,
-    private appointmentsLocalService: AppointmentsLocalService,
-    private router: Router
+    private reservasApiService: ReservasApiService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -24,7 +27,33 @@ export class MisCitasComponent implements OnInit {
       return;
     }
 
-    this.appointments = this.appointmentsLocalService.getMyAppointments();
+    this.loadAppointments();
+  }
+
+  loadAppointments(): void {
+    this.loading = true;
+    this.errorMessage = null;
+
+    const token = this.authService.getToken();
+    if (!token) {
+      this.loading = false;
+      this.errorMessage = 'Debes iniciar sesión para ver tus citas.';
+      return;
+    }
+
+    this.reservasApiService.getMyAppointments(token).subscribe({
+      next: (appointments) => {
+        this.appointments = appointments;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error al cargar citas:', error);
+        this.loading = false;
+        this.errorMessage = error?.error?.message || 'No se pudieron cargar tus citas. Intenta de nuevo.';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   volverAlInicio(): void {
