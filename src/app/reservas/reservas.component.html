@@ -41,11 +41,11 @@
               type="button"
               class="calendar-day"
               [class.disabled]="!isWeekday(day)"
+              [class.past-date]="isWeekday(day) && !isFutureDate(day)"
               [class.selected]="isSelected(day)"
               [class.weekend]="!isWeekday(day)"
-              [class.past]="isPastDate(day)"
               (click)="selectDate(day)"
-              [disabled]="!isWeekday(day)">
+              [disabled]="!isWeekday(day) || (isWeekday(day) && !isFutureDate(day))">
               {{ day }}
             </button>
             <div *ngIf="!day" class="calendar-empty"></div>

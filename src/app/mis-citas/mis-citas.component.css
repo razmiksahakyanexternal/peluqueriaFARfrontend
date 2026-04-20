@@ -67,7 +67,18 @@
   margin-top: 0.8rem;
 }
 
+<<<<<<< Updated upstream
 .appointment-info {
+=======
+.appointment-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.appointment-details {
+>>>>>>> Stashed changes
   flex: 1;
 }
 
@@ -83,6 +94,7 @@
   color: #627184;
 }
 
+<<<<<<< Updated upstream
 .cancel-btn {
   background-color: #d17871;
   color: white;
@@ -93,10 +105,34 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+=======
+.appointment-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
+.success-copy {
+  margin: 0;
+  color: #28a745;
+  font-weight: 600;
+}
+
+.cancel-btn {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+>>>>>>> Stashed changes
   transition: background-color 0.2s ease;
 }
 
 .cancel-btn:hover:not(:disabled) {
+<<<<<<< Updated upstream
   background-color: #c25f5a;
 }
 
@@ -124,4 +160,58 @@
   background-color: #d4edda;
   border: 1px solid #c3e6cb;
   border-radius: 4px;
+=======
+  background: #c82333;
+}
+
+.cancel-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.confirm-row {
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 8px;
+  background: #fff4f4;
+  border: 1px solid #f5c6cb;
+}
+
+.confirm-row p {
+  margin: 0 0 0.75rem;
+  color: #842029;
+  font-weight: 600;
+}
+
+.confirm-btn {
+  margin-right: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.cancel-btn.secondary {
+  margin-top: 0;
+  background: #6c757d;
+}
+
+.cancel-btn.secondary:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.appointments-count {
+  margin: 0 0 1rem;
+  font-weight: 700;
+  color: #26313f;
+>>>>>>> Stashed changes
 }

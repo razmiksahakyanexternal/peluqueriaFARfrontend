@@ -70,20 +70,19 @@ export class ReservasComponent implements OnInit {
     if (!day) return false;
     const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
     const dayOfWeek = date.getDay();
-    return dayOfWeek >= 1 && dayOfWeek <= 5 && !this.isPastDate(day);
+    return dayOfWeek >= 1 && dayOfWeek <= 5;
   }
 
-  isPastDate(day: number | null): boolean {
+  isFutureDate(day: number | null): boolean {
     if (!day) return false;
     const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    return date < today;
+    today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+    return date >= today;
   }
 
   selectDate(day: number | null): void {
-    if (day && this.isWeekday(day)) {
+    if (day && this.isWeekday(day) && this.isFutureDate(day)) {
       this.selectedDate = new Date(
         this.currentDate.getFullYear(),
         this.currentDate.getMonth(),
