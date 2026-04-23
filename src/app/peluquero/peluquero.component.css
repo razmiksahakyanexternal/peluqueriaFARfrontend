@@ -319,6 +319,92 @@
 	gap: 0.45rem;
 }
 
+.day-calendar-grid {
+	margin-top: 0.8rem;
+	display: grid;
+	grid-template-columns: 78px minmax(90px, 1fr);
+	grid-auto-rows: 44px;
+	gap: 0.45rem;
+}
+
+.month-calendar-card {
+	padding: 0.72rem;
+}
+
+.month-calendar-grid {
+	margin-top: 0.8rem;
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 0.45rem;
+}
+
+.month-header {
+	display: grid;
+	place-items: center;
+	font-weight: 600;
+	color: #26313f;
+	padding: 0.4rem;
+	border-radius: 8px;
+	background: #eef3f7;
+}
+
+.month-day {
+	min-height: 80px;
+	padding: 0.4rem;
+	border-radius: 8px;
+	border: 1px solid #d6dce3;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.2rem;
+	position: relative;
+}
+
+.month-day.current-month {
+	background: #fff;
+}
+
+.month-day:not(.current-month) {
+	background: #f5f7f9;
+	color: #9aabbc;
+}
+
+.month-day.today {
+	border-color: #4da882;
+	background: #f0f9f4;
+}
+
+.month-day.selected {
+	border-color: #1f2e40;
+	background: #e8f0f8;
+}
+
+.day-number {
+	font-weight: 600;
+	font-size: 0.9rem;
+}
+
+.day-appointments {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	width: 100%;
+}
+
+.appointment-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: #4da882;
+}
+
+.more-count {
+	font-size: 0.7rem;
+	color: #68788a;
+	font-weight: 600;
+	margin-top: 0.1rem;
+}
+
 .time-head,
 .day-head,
 .time-cell,
@@ -482,6 +568,50 @@
 	background: linear-gradient(135deg, #74b9b124, #e5be5f24);
 	color: #344540;
 	padding: 1.5rem;
+}
+
+.month-card {
+	padding: 0.72rem;
+}
+
+.month-list {
+	margin-top: 0.8rem;
+	display: grid;
+	gap: 1rem;
+}
+
+.month-group h4 {
+	margin: 0 0 0.5rem 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: #26313f;
+}
+
+.month-appointments {
+	display: grid;
+	gap: 0.4rem;
+}
+
+.month-item {
+	display: grid;
+	grid-template-columns: 80px 1fr;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0.6rem;
+	border-radius: 6px;
+	background: #f8f9fa;
+	border: 1px solid #e9ecef;
+}
+
+.month-item .time {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #495057;
+}
+
+.month-item .name {
+	font-size: 0.9rem;
+	color: #6c757d;
 }
 
 @media (max-width: 1100px) {

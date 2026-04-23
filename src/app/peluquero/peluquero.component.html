@@ -18,8 +18,8 @@
 
         <div class="sidebar-card next-card" *ngIf="nextAppointment; else noNextAppointment">
           <span class="eyebrow">Proxima cita</span>
-          <strong>{{ nextAppointment.time }}</strong>
-          <p>{{ nextAppointment.name }}</p>
+          <strong>{{ nextAppointment.startTime }}</strong>
+          <p>{{ nextAppointment.guestName }}</p>
           <small>{{ formattedToday }}</small>
         </div>
 
@@ -59,16 +59,17 @@
 
       <section class="toolbar-row">
         <div class="toolbar-left">
-          <button type="button" class="ghost-btn">‹</button>
-          <button type="button" class="month-btn">Abril 2024</button>
-          <button type="button" class="ghost-btn">›</button>
-          <button type="button" class="today-btn">Hoy</button>
+          <button type="button" class="ghost-btn" (click)="movePeriod(-1)">‹</button>
+          <button type="button" class="month-btn">{{ periodTitle }}</button>
+          <button type="button" class="ghost-btn" (click)="movePeriod(1)">›</button>
+          <button type="button" class="today-btn" (click)="goToToday()">Hoy</button>
         </div>
 
         <div class="toolbar-right">
           <div class="view-toggle">
-            <button type="button" class="toggle-btn active">Dia</button>
-            <button type="button" class="toggle-btn">Semana</button>
+            <button type="button" class="toggle-btn" [class.active]="viewMode === 'day'" (click)="changeView('day')">Dia</button>
+            <button type="button" class="toggle-btn" [class.active]="viewMode === 'week'" (click)="changeView('week')">Semana</button>
+            <button type="button" class="toggle-btn" [class.active]="viewMode === 'month'" (click)="changeView('month')">Mes</button>
           </div>
 
           <button type="button" class="add-btn">+ Anadir Cita ▾</button>
@@ -76,16 +77,82 @@
       </section>
 
       <section class="kpi-row">
-        <article class="kpi-card" *ngFor="let kpi of kpis; trackBy: trackByKpi">
+        <article class="kpi-card" *ngFor="let kpi of kpiValues; trackBy: trackByKpi">
           <p>{{ kpi.title }}</p>
           <strong>{{ kpi.value }}</strong>
           <span>{{ kpi.hint }}</span>
         </article>
       </section>
 
-      <section class="agenda-grid">
+      <section class="agenda-grid" *ngIf="viewMode === 'day'">
+        <article class="day-calendar-card">
+          <h3>{{ periodTitle }}</h3>
+
+          <div class="day-calendar-grid">
+            <div class="time-head"></div>
+            <div class="day-head selected">
+              <span>{{ dayNames[selectedDate.getDay()] }}</span>
+              <strong>{{ selectedDate.getDate() }}</strong>
+            </div>
+
+            <ng-container *ngFor="let slot of timeSlots; trackBy: trackBySlot">
+              <div class="time-cell">{{ slot }}</div>
+              <div class="slot-cell"></div>
+            </ng-container>
+
+            <article
+              class="event-chip"
+              *ngFor="let event of dayCalendarEvents; trackBy: trackByEvent"
+              [class.free]="event.variant === 'libre'"
+              [class.closed]="event.variant === 'cerrado'"
+              [style.gridColumn]="2"
+              [style.gridRow]="event.start + 2 + ' / span ' + event.span"
+            >
+              {{ event.title }}
+            </article>
+          </div>
+        </article>
+
+        <div class="side-column">
+          <article class="day-card">
+            <div class="panel-head">
+              <h3>{{ formattedToday }}</h3>
+              <span>{{ visibleAppointments.length }} visibles</span>
+            </div>
+
+            <div class="day-list" *ngIf="visibleAppointments.length > 0; else emptyAgenda">
+              <div class="day-item" *ngFor="let appointment of visibleAppointments; trackBy: trackByTime">
+                <span class="avatar">{{ initials(appointment.guestName) }}</span>
+
+                <div class="appointment-copy">
+                  <strong>{{ appointment.startTime }}</strong>
+                  <span>{{ appointment.guestName }}</span>
+                </div>
+
+                <span class="lock">🔒</span>
+              </div>
+            </div>
+
+            <ng-template #emptyAgenda>
+              <div class="empty-panel">
+                <p>No hay citas registradas para este periodo.</p>
+              </div>
+            </ng-template>
+          </article>
+
+          <article class="legend-card">
+            <h4>Leyenda</h4>
+            <div class="legend-item"><span class="dot cita"></span><span>Cita</span></div>
+            <div class="legend-item"><span class="dot libre"></span><span>Dia Libre</span></div>
+            <div class="legend-item"><span class="dot cerrado"></span><span>Cerrado</span></div>
+            <button type="button" class="block-btn">+ Bloquear Hora</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="agenda-grid" *ngIf="viewMode === 'week'">
         <article class="week-card">
-          <h3>Semana del 15 - 21 Abril 2024</h3>
+          <h3>{{ periodTitle }}</h3>
 
           <div class="calendar-grid">
             <div class="time-head"></div>
@@ -125,25 +192,25 @@
           <article class="day-card">
             <div class="panel-head">
               <h3>{{ formattedToday }}</h3>
-              <span>{{ upcomingAppointments.length }} visibles</span>
+              <span>{{ visibleAppointments.length }} visibles</span>
             </div>
 
-            <div class="day-list" *ngIf="upcomingAppointments.length > 0; else emptyAgenda">
-              <div class="day-item" *ngFor="let appointment of dayAppointments; trackBy: trackByTime">
-                <span class="avatar">{{ initials(appointment.name) }}</span>
+            <div class="day-list" *ngIf="visibleAppointments.length > 0; else emptyAgenda">
+              <div class="day-item" *ngFor="let appointment of visibleAppointments; trackBy: trackByTime">
+                <span class="avatar">{{ initials(appointment.guestName) }}</span>
 
                 <div class="appointment-copy">
-                  <strong>{{ appointment.time }}</strong>
-                  <span>{{ appointment.name }}</span>
+                  <strong>{{ appointment.startTime }}</strong>
+                  <span>{{ appointment.guestName }}</span>
                 </div>
 
-                <span class="lock" *ngIf="appointment.status === 'blocked'">🔒</span>
+                <span class="lock">🔒</span>
               </div>
             </div>
 
             <ng-template #emptyAgenda>
               <div class="empty-panel">
-                <p>No hay citas registradas para hoy.</p>
+                <p>No hay citas registradas para este periodo.</p>
               </div>
             </ng-template>
           </article>
@@ -156,6 +223,32 @@
             <button type="button" class="block-btn">+ Bloquear Hora</button>
           </article>
         </div>
+      </section>
+
+      <section class="agenda-grid" *ngIf="viewMode === 'month'">
+        <article class="month-calendar-card" style="grid-column: 1 / -1;">
+          <h3>{{ periodTitle }}</h3>
+
+          <div class="month-calendar-grid">
+            <div class="month-header" *ngFor="let day of dayNames; trackBy: trackBySlot">
+              {{ day.slice(0, 3) }}
+            </div>
+
+            <div
+              class="month-day"
+              *ngFor="let day of monthDays; trackBy: trackByMonthDay"
+              [class.current-month]="day.currentMonth"
+              [class.today]="day.today"
+              [class.selected]="day.selected"
+            >
+              <span class="day-number">{{ day.date }}</span>
+              <div class="day-appointments">
+                <div class="appointment-dot" *ngFor="let apt of day.appointments.slice(0, 3); trackBy: trackByTime"></div>
+                <span class="more-count" *ngIf="day.appointments.length > 3">+{{ day.appointments.length - 3 }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
       </section>
     </main>
   </div>

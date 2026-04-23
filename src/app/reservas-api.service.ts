@@ -42,5 +42,25 @@ export class ReservasApiService {
 			params: { date: appointmentDate },
 		});
 	}
+<<<<<<< Updated upstream
+=======
+
+	getMyAppointments(token: string): Observable<AppointmentItem[]> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<AppointmentItem[]>(`${this.baseUrl}/my`, { headers });
+	}
+
+	getAppointmentsInRange(start: string, end: string, token: string): Observable<AppointmentItem[]> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<AppointmentItem[]>(`${this.baseUrl}/range`, {
+			headers,
+			params: { start, end },
+		});
+	}
+>>>>>>> Stashed changes
 }
 

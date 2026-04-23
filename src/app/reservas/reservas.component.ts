@@ -73,8 +73,22 @@ export class ReservasComponent implements OnInit {
     return dayOfWeek >= 1 && dayOfWeek <= 5;
   }
 
+<<<<<<< Updated upstream
   selectDate(day: number | null): void {
     if (day && this.isWeekday(day)) {
+=======
+  isFutureDate(day: number | null): boolean {
+    if (!day) return false;
+    const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date >= today;
+  }
+
+  selectDate(day: number | null): void {
+    if (day && this.isWeekday(day) && this.isFutureDate(day)) {
+>>>>>>> Stashed changes
       this.selectedDate = new Date(
         this.currentDate.getFullYear(),
         this.currentDate.getMonth(),
