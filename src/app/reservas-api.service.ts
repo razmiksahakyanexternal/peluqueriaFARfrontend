@@ -3,8 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface CreateAppointmentRequest {
-	appointmentDate: string; // formato YYYY-MM-DD
-	startTime: string; // formato HH:mm:ss
+	appointmentDate: string;
+	startTime: string;
 	guestName?: string;
 	guestPhone?: string;
 }
@@ -33,6 +33,7 @@ export interface AppointmentItem {
 	guestName?: string;
 	guestPhone?: string;
 }
+
 @Injectable({
 	providedIn: 'root'
 })
@@ -58,8 +59,6 @@ export class ReservasApiService {
 			params: { date: appointmentDate },
 		});
 	}
-<<<<<<< Updated upstream
-=======
 
 	getMyAppointments(token: string): Observable<AppointmentItem[]> {
 		const headers = new HttpHeaders({
@@ -78,7 +77,7 @@ export class ReservasApiService {
 		});
 	}
 
-getUsers(token: string): Observable<UserItem[]> {
+	getUsers(token: string): Observable<UserItem[]> {
 		const headers = new HttpHeaders({
 			Authorization: `Bearer ${token}`,
 		});
@@ -94,6 +93,4 @@ getUsers(token: string): Observable<UserItem[]> {
 			params: { q: query },
 		});
 	}
->>>>>>> Stashed changes
 }
-
