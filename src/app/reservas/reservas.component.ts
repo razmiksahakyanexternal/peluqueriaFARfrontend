@@ -1,5 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { AppointmentsLocalService } from '../appointments-local.service';
 import { ReservasApiService, CreateAppointmentRequest } from '../reservas-api.service';
 import { AuthService } from '../auth.service';
@@ -8,7 +10,8 @@ import { AuthService } from '../auth.service';
   selector: 'app-reservas',
   templateUrl: './reservas.component.html',
   styleUrl: './reservas.component.css',
-  standalone: false
+  standalone: true,
+  imports: [FormsModule, CommonModule]
 })
 export class ReservasComponent implements OnInit {
   currentDate = new Date();
@@ -73,8 +76,22 @@ export class ReservasComponent implements OnInit {
     return dayOfWeek >= 1 && dayOfWeek <= 5;
   }
 
+<<<<<<< Updated upstream
   selectDate(day: number | null): void {
     if (day && this.isWeekday(day)) {
+=======
+  isFutureDate(day: number | null): boolean {
+    if (!day) return false;
+    const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date >= today;
+  }
+
+  selectDate(day: number | null): void {
+    if (day && this.isWeekday(day) && this.isFutureDate(day)) {
+>>>>>>> Stashed changes
       this.selectedDate = new Date(
         this.currentDate.getFullYear(),
         this.currentDate.getMonth(),
@@ -104,11 +121,11 @@ export class ReservasComponent implements OnInit {
   }
 
   confirmBooking(): void {
-    if (this.selectedDate && this.selectedTime) {
+    if (this.selectedDate !== null && this.selectedTime !== null) {
       this.errorMessage = null;
       this.successMessage = null;
       const appointmentDate = this.toIsoDate(this.selectedDate);
-      const startTime = this.selectedTime + ':00'; // formato HH:mm:ss
+      const startTime = this.selectedTime + ':00';
       const token = this.authService.getToken();
       if (!token) {
         this.errorMessage = 'Debes iniciar sesión para reservar.';
@@ -118,11 +135,11 @@ export class ReservasComponent implements OnInit {
         appointmentDate,
         startTime,
         guestName: this.authService.getFullName(),
-        guestPhone: undefined // Puedes pedirlo en el formulario si lo necesitas
+        guestPhone: undefined
       };
       this.reservasApiService.createAppointment(payload, token).subscribe({
         next: (response) => {
-          if (this.selectedTime) {
+          if (this.selectedTime !== null) {
             this.occupiedHours.add(this.normalizeTimeToHourMinute(this.selectedTime));
           }
           this.citaConfirmada = true;

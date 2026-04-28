@@ -71,7 +71,7 @@
             <button type="button" class="toggle-btn">Semana</button>
           </div>
 
-          <button type="button" class="add-btn">+ Anadir Cita ▾</button>
+          <button type="button" class="add-btn" (click)="openBookingModal()">+ Anadir Cita ▾</button>
         </div>
       </section>
 
@@ -158,5 +158,53 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Booking Modal -->
+  <div class="modal-overlay" *ngIf="showBookingModal" (click)="closeBookingModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Reservar Cita</h2>
+        <button type="button" class="close-btn" (click)="closeBookingModal()">×</button>
+      </header>
+
+      <form class="booking-form" (ngSubmit)="bookAppointment()">
+        <div class="form-group">
+          <label for="bookingDate">Fecha</label>
+          <input type="date" id="bookingDate" [(ngModel)]="bookingDate" name="bookingDate" required>
+        </div>
+
+        <div class="form-group">
+          <label for="bookingTime">Hora</label>
+          <select id="bookingTime" [(ngModel)]="bookingTime" name="bookingTime" required>
+            <option value="">Seleccionar hora</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="userSelect">Cliente Registrado</label>
+          <select id="userSelect" [(ngModel)]="selectedUserId" name="selectedUserId" (change)="onUserSelect($any($event.target).value)">
+            <option value="">Cliente no registrado</option>
+            <option *ngFor="let user of users" [value]="user.id">{{ user.name }} {{ user.surname }} ({{ user.email }})</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="guestName">Nombre Invitado</label>
+          <input type="text" id="guestName" [(ngModel)]="guestName" name="guestName" [required]="!selectedUserId">
+        </div>
+
+        <div class="form-group">
+          <label for="guestPhone">Teléfono</label>
+          <input type="tel" id="guestPhone" [(ngModel)]="guestPhone" name="guestPhone">
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeBookingModal()">Cancelar</button>
+          <button type="submit" class="confirm-btn">Confirmar Reserva</button>
+        </div>
+      </form>
+    </div>
   </div>
 </section>

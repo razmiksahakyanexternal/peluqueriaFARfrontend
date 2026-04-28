@@ -10,17 +10,13 @@ import { RegistroComponent } from './registro/registro.component';
 import { HomeComponent } from './home/home.component';
 import { PeluqueroComponent } from './peluquero/peluquero.component';
 import { ReservasComponent } from './reservas/reservas.component';
-import { MisCitasComponent } from './mis-citas/mis-citas.component';
 
 @NgModule({
   declarations: [
     App,
     InicioSesionComponent,
     RegistroComponent,
-    HomeComponent,
-    PeluqueroComponent,
-    ReservasComponent,
-    MisCitasComponent
+    HomeComponent
   ],
   imports: [
     BrowserModule,
