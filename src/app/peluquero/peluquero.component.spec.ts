@@ -32,7 +32,7 @@ describe('PeluqueroComponent', () => {
 
   it('should build week days correctly', () => {
     component.selectedDate = new Date('2024-01-15'); // Monday
-    component.buildWeekDays();
+    (component as any).buildWeekDays();
     expect(component.weekDays.length).toBe(7);
     expect(component.weekDays[0].name).toBe('Lunes');
     expect(component.weekDays[6].name).toBe('Domingo');
@@ -40,7 +40,7 @@ describe('PeluqueroComponent', () => {
 
   it('should filter appointments this week', () => {
     component.selectedDate = new Date('2024-01-15');
-    component.buildWeekDays();
+    (component as any).buildWeekDays();
     component.appointments = [
       { id: 1, appointmentDate: '2024-01-15', startTime: '10:00', endTime: '10:15', guestName: 'Test' },
       { id: 2, appointmentDate: '2024-01-20', startTime: '11:00', endTime: '11:15', guestName: 'Test2' }
@@ -52,7 +52,7 @@ describe('PeluqueroComponent', () => {
   it('should move period correctly for week view', () => {
     component.viewMode = 'week';
     component.selectedDate = new Date('2024-01-15');
-    component.movePeriod(1);
+    component.movePeriod('next');
     expect(component.selectedDate.getDate()).toBe(22); // Next Monday
   });
 
@@ -63,7 +63,7 @@ describe('PeluqueroComponent', () => {
 
   it('should generate calendar events', () => {
     component.selectedDate = new Date('2024-01-15');
-    component.buildWeekDays();
+    (component as any).buildWeekDays();
     component.appointments = [
       { id: 1, appointmentDate: '2024-01-15', startTime: '10:00', endTime: '10:15', guestName: 'Test' }
     ];

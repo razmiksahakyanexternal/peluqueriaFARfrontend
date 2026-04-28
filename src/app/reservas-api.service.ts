@@ -58,8 +58,6 @@ export class ReservasApiService {
 			params: { date: appointmentDate },
 		});
 	}
-<<<<<<< Updated upstream
-=======
 
 	getMyAppointments(token: string): Observable<AppointmentItem[]> {
 		const headers = new HttpHeaders({
@@ -84,6 +82,5 @@ export class ReservasApiService {
 		});
 		return this.http.get<UserItem[]>(this.usersUrl, { headers });
 	}
->>>>>>> Stashed changes
 }
 

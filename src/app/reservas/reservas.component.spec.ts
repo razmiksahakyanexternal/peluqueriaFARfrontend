@@ -6,10 +6,13 @@ import { ReservasComponent } from './reservas.component';
 import { AuthService } from '../auth.service';
 import { AppointmentsLocalService } from '../appointments-local.service';
 import { ReservasApiService } from '../reservas-api.service';
+import { vi } from 'vitest';
 
 describe('ReservasComponent', () => {
   let component: ReservasComponent;
   let fixture: ComponentFixture<ReservasComponent>;
+  let authService: AuthService;
+  let reservasApiService: ReservasApiService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -28,6 +31,8 @@ describe('ReservasComponent', () => {
 
     fixture = TestBed.createComponent(ReservasComponent);
     component = fixture.componentInstance;
+    authService = TestBed.inject(AuthService);
+    reservasApiService = TestBed.inject(ReservasApiService);
   });
 
   it('should create the component', () => {
@@ -35,36 +40,42 @@ describe('ReservasComponent', () => {
   });
 
   it('should initialize default date', () => {
+    vi.spyOn(authService, 'isLoggedIn').mockReturnValue(true);
     component.ngOnInit();
     expect(component.selectedDate).toBeTruthy();
   });
 
   it('should check if time is occupied', () => {
     component.occupiedHours = new Set(['10:00']);
-    expect(component.isTimeOccupied('10:00')).toBeTrue();
-    expect(component.isTimeOccupied('11:00')).toBeFalse();
+    expect(component.isTimeOccupied('10:00')).toBeTruthy();
+    expect(component.isTimeOccupied('11:00')).toBeFalsy();
   });
 
   it('should select date and load occupied slots', () => {
-    spyOn(component, 'loadOccupiedSlots');
-    component.onDateSelect(new Date('2024-01-15'));
-    expect(component.selectedDate).toEqual(new Date('2024-01-15'));
-    expect(component.loadOccupiedSlots).toHaveBeenCalled();
+    vi.spyOn(component as any, 'loadOccupiedHours');
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 1); // Tomorrow
+    component.selectDate(futureDate.getDate());
+    expect(component.selectedDate?.getDate()).toBe(futureDate.getDate());
+    expect((component as any).loadOccupiedHours).toHaveBeenCalled();
   });
 
   it('should select time', () => {
-    component.onTimeSelect('10:00');
+    component.selectTime('10:00');
     expect(component.selectedTime).toBe('10:00');
   });
 
   it('should confirm appointment', () => {
     component.selectedDate = new Date('2024-01-15');
     component.selectedTime = '10:00';
-    spyOn(component.appointmentsLocalService, 'addAppointment');
-    spyOn(component.reservasApiService, 'createAppointment').and.returnValue({
-      subscribe: jasmine.createSpy('subscribe')
+    vi.spyOn(authService, 'getToken').mockReturnValue('token');
+    vi.spyOn(authService, 'getFullName').mockReturnValue('Test User');
+    vi.spyOn(reservasApiService, 'createAppointment').mockReturnValue({
+      subscribe: vi.fn().mockImplementation((callbacks: any) => {
+        callbacks.next({ message: 'Success' });
+      })
     } as any);
-    component.confirmarCita();
-    expect(component.citaConfirmada).toBeTrue();
+    component.confirmBooking();
+    expect(component.citaConfirmada).toBeTruthy();
   });
 });

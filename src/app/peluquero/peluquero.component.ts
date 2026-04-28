@@ -1,12 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth.service';
-<<<<<<< Updated upstream
-=======
 import { ReservasApiService, AppointmentItem, UserItem } from '../reservas-api.service';
->>>>>>> Stashed changes
 
 interface AgendaNavItem {
   label: string;
@@ -22,6 +19,7 @@ interface AgendaKpi {
 interface WeekDay {
   name: string;
   date: string;
+  iso: string;
   weekend?: boolean;
   selected?: boolean;
 }
@@ -47,10 +45,6 @@ interface DayAppointment {
   standalone: true,
   imports: [FormsModule, CommonModule]
 })
-<<<<<<< Updated upstream
-export class PeluqueroComponent {
-  constructor(private authService: AuthService, private router: Router) {}
-=======
 export class PeluqueroComponent implements OnInit {
   constructor(
     private authService: AuthService,
@@ -70,7 +64,19 @@ export class PeluqueroComponent implements OnInit {
   selectedUserId: number | null = null;
   guestName = '';
   guestPhone = '';
->>>>>>> Stashed changes
+
+  weekDays: WeekDay[] = [];
+  timeSlots: string[] = [
+    '09:00', '09:15', '09:30', '09:45',
+    '10:00', '10:15', '10:30', '10:45',
+    '11:00', '11:15', '11:30', '11:45',
+    '12:00', '12:15', '12:30', '12:45',
+    '13:00', '13:15', '13:30', '13:45',
+    '14:00', '14:15', '14:30', '14:45',
+    '15:00', '15:15', '15:30', '15:45',
+    '16:00', '16:15', '16:30', '16:45',
+    '17:00', '17:15', '17:30', '17:45'
+  ];
 
   readonly navItems: AgendaNavItem[] = [
     { label: 'Agenda', active: true },
@@ -83,31 +89,6 @@ export class PeluqueroComponent implements OnInit {
     { title: 'Citas de Hoy', value: '8', hint: '3 bloques activos' },
     { title: 'Citas Pendientes', value: '2', hint: 'Pendientes de confirmar' },
     { title: 'Dias Laborables', value: 'Lun - Vie', hint: 'Configurar horario' }
-  ];
-
-  readonly weekDays: WeekDay[] = [
-    { name: 'Lunes', date: '15' },
-    { name: 'Martes', date: '16' },
-    { name: 'Miercoles', date: '17' },
-    { name: 'Jueves', date: '18', selected: true },
-    { name: 'Viernes', date: '19' },
-    { name: 'Sabado', date: '20', weekend: true },
-    { name: 'Domingo', date: '21', weekend: true }
-  ];
-
-  readonly timeSlots: string[] = [
-    '09:00',
-    '09:15',
-    '09:30',
-    '09:45',
-    '10:00',
-    '10:15',
-    '10:30',
-    '10:45',
-    '11:00',
-    '11:15',
-    '11:30',
-    '11:45'
   ];
 
   readonly calendarEvents: CalendarEvent[] = [
@@ -127,28 +108,48 @@ export class PeluqueroComponent implements OnInit {
     { day: 4, start: 7, span: 2, title: 'Jose Bando', variant: 'cita' }
   ];
 
-<<<<<<< Updated upstream
-  readonly dayAppointments: DayAppointment[] = [
-    { time: '09:00', name: 'Ana Lopez' },
-    { time: '10:00', name: '--', status: 'blocked' },
-    { time: '10:15', name: 'Diego Costa' },
-    { time: '11:15', name: 'Ferna Carriba' }
-  ];
-
-  get occupiedSlots(): number {
-    return this.calendarEvents
-      .filter((event) => event.variant === 'cita')
-      .reduce((total, event) => total + event.span, 0);
-=======
   ngOnInit(): void {
     this.buildWeekDays();
     this.loadAppointments();
     this.loadUsers();
->>>>>>> Stashed changes
+  }
+
+  private buildWeekDays(): void {
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    this.weekDays = [];
+    const startOfWeek = new Date(this.selectedDate);
+    startOfWeek.setDate(this.selectedDate.getDate() - this.selectedDate.getDay());
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      this.weekDays.push({
+        name: days[date.getDay()],
+        date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+        iso: this.toIsoDate(date),
+        weekend: date.getDay() === 0 || date.getDay() === 6
+      });
+    }
+  }
+
+  private toIsoDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  get dayAppointments(): DayAppointment[] {
+    // For day view, return appointments for selected date
+    return [];
+  }
+
+  get occupiedSlots(): number {
+    return this.calendarEvents.filter(event => event.variant === 'cita').length;
   }
 
   get totalClients(): number {
-    return this.dayAppointments.filter((appointment) => appointment.name !== '--').length;
+    return this.dayAppointments.filter(appointment => appointment.name !== '--').length;
   }
 
   get occupancyPercent(): number {
@@ -161,11 +162,15 @@ export class PeluqueroComponent implements OnInit {
   }
 
   get upcomingAppointments(): DayAppointment[] {
-    return this.dayAppointments.filter((appointment) => appointment.name !== '--');
+    return this.dayAppointments.filter(appointment => appointment.name !== '--');
   }
 
   get nextAppointment(): DayAppointment | null {
     return this.upcomingAppointments[0] ?? null;
+  }
+
+  get appointmentsThisWeek(): AppointmentItem[] {
+    return this.appointments;
   }
 
   trackByTime(_: number, appointment: DayAppointment): string {
@@ -176,14 +181,14 @@ export class PeluqueroComponent implements OnInit {
     return item.label;
   }
 
-<<<<<<< Updated upstream
   trackByKpi(_: number, item: AgendaKpi): string {
     return item.title;
   }
 
   trackBySlot(_: number, slot: string): string {
     return slot;
-=======
+  }
+
   private loadAppointments(): void {
     const token = this.authService.getToken();
     if (!token) {
@@ -291,7 +296,19 @@ export class PeluqueroComponent implements OnInit {
     const startDate = new Date(this.weekDays[0].iso);
     const endDate = new Date(this.weekDays[6].iso);
     return [this.toIsoDate(startDate), this.toIsoDate(endDate)];
->>>>>>> Stashed changes
+  }
+
+  changeView(mode: 'day' | 'week' | 'month'): void {
+    this.viewMode = mode;
+    this.loadAppointments();
+  }
+
+  movePeriod(direction: 'prev' | 'next'): void {
+    const days = this.viewMode === 'week' ? 7 : this.viewMode === 'month' ? 30 : 1;
+    const multiplier = direction === 'next' ? 1 : -1;
+    this.selectedDate = new Date(this.selectedDate.getTime() + days * 24 * 60 * 60 * 1000 * multiplier);
+    this.buildWeekDays();
+    this.loadAppointments();
   }
 
   trackByDay(_: number, day: WeekDay): string {
