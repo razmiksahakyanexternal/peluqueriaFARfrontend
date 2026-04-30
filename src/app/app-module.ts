@@ -18,8 +18,6 @@ import { MisCitasComponent } from './mis-citas/mis-citas.component';
     InicioSesionComponent,
     RegistroComponent,
     HomeComponent,
-    PeluqueroComponent,
-    ReservasComponent,
     MisCitasComponent
   ],
   imports: [

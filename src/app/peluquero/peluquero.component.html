@@ -71,7 +71,7 @@
             <button type="button" class="toggle-btn">Semana</button>
           </div>
 
-          <button type="button" class="add-btn">+ Anadir Cita ▾</button>
+          <button type="button" class="add-btn" (click)="openBookingModal()">+ Anadir Cita</button>
         </div>
       </section>
 
@@ -158,5 +158,71 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Reserva -->
+  <div class="modal-overlay" *ngIf="showBookingModal" (click)="closeBookingModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Reservar Cita</h2>
+        <button type="button" class="close-btn" (click)="closeBookingModal()">×</button>
+      </header>
+
+      <form class="booking-form" (ngSubmit)="bookAppointment()">
+<div class="form-group">
+          <label for="bookingDate">Fecha</label>
+          <input type="date" id="bookingDate" [(ngModel)]="bookingDate" name="bookingDate" [min]="todayIso" [class.error-input]="submitted && !bookingDate">
+          <p class="error-message" *ngIf="submitted && !bookingDate">{{ dateError }}</p>
+        </div>
+
+        <div class="form-group">
+          <label for="bookingTime">Hora</label>
+          <select id="bookingTime" [(ngModel)]="bookingTime" name="bookingTime" [class.error-input]="submitted && !bookingTime">
+            <option value="">Seleccionar hora</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+          </select>
+          <p class="error-message" *ngIf="submitted && !bookingTime">{{ timeError }}</p>
+        </div>
+
+<div class="form-group autocomplete-group">
+          <label for="userSearch">Cliente Registrado</label>
+          <div class="autocomplete-wrapper">
+<input 
+              type="text" 
+              id="userSearch" 
+              [(ngModel)]="userSearchQuery" 
+              name="userSearch" 
+              (input)="onUserSearch($event)"
+              (blur)="onBlurUser()"
+              (focus)="onFocusUser()"
+              placeholder="Busca el usuario por email..."
+              [class.error-input]="submitted && !selectedUserId"
+              autocomplete="off">
+            <button type="button" class="clear-search-btn" *ngIf="userSearchQuery" (click)="clearUser()">×</button>
+          </div>
+          <ul class="suggestions-list" *ngIf="showUserSuggestions">
+            <li *ngFor="let user of userSuggestions" (click)="selectUser(user)">
+              <span>{{ user.email }}</span>
+            </li>
+          </ul>
+          <p class="error-message" *ngIf="submitted && !selectedUserId">{{ guestNameError }}</p>
+        </div>
+
+        <div class="form-group">
+          <label for="guestName">Nombre de Usuario Registrado</label>
+<input type="text" id="guestName" [(ngModel)]="guestName" name="guestName" [disabled]="!!selectedUserId">
+        </div>
+
+        <div class="form-group">
+          <label for="guestPhone">Teléfono (Opcional)</label>
+          <input type="tel" id="guestPhone" [(ngModel)]="guestPhone" name="guestPhone">
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeBookingModal()">Cancelar</button>
+          <button type="submit" class="confirm-btn">Confirmar Reserva</button>
+        </div>
+      </form>
+    </div>
   </div>
 </section>
