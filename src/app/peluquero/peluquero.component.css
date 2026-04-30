@@ -639,3 +639,71 @@
 .confirm-btn:hover {
 	background: #1a2530;
 }
+
+/* Cancel Appointment Button */
+.cancel-appointment-btn {
+	background: none;
+	border: none;
+	color: #dc3545;
+	font-size: 1.2rem;
+	cursor: pointer;
+	padding: 0.25rem 0.5rem;
+	border-radius: 4px;
+	transition: background 0.2s, color 0.2s;
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+}
+
+.cancel-appointment-btn:hover {
+	background: #dc3545;
+	color: #fff;
+}
+
+/* Cancel Modal Styles */
+.cancel-modal {
+	max-width: 500px;
+}
+
+.modal-body {
+	padding: 1.5rem;
+	text-align: center;
+	border-bottom: 1px solid #e9edf1;
+}
+
+.modal-body p {
+	margin: 0;
+	color: #26313f;
+}
+
+.modal-body .warning {
+	margin-top: 0.5rem;
+	color: #dc3545;
+	font-size: 0.9rem;
+	font-weight: 500;
+}
+
+.modal-footer {
+	padding: 1rem;
+	display: flex;
+	gap: 1rem;
+	justify-content: flex-end;
+}
+
+.danger-btn {
+	padding: 0.75rem 1.5rem;
+	border: none;
+	border-radius: 6px;
+	font-weight: 600;
+	cursor: pointer;
+	background: #dc3545;
+	color: #fff;
+	transition: background 0.2s;
+}
+
+.danger-btn:hover {
+	background: #c82333;
+}

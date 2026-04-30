@@ -12,7 +12,7 @@
 
         <div class="sidebar-card profile-card">
           <span class="eyebrow">Profesional</span>
-          <h2>Luis Martinez</h2>
+          <h2>{{ currentUser?.name }} {{ currentUser?.surname }}</h2>
           <p>Especialista en corte, color y styling.</p>
         </div>
 
@@ -138,6 +138,16 @@
                 </div>
 
                 <span class="lock" *ngIf="appointment.status === 'blocked'">🔒</span>
+                
+                <button 
+                  type="button" 
+                  class="cancel-appointment-btn" 
+                  *ngIf="appointment.status !== 'blocked' && appointment.name !== '--'"
+                  (click)="openCancelModal(appointment)"
+                  title="Cancelar cita"
+                >
+                  ✕
+                </button>
               </div>
             </div>
 
@@ -205,6 +215,28 @@
           <button type="submit" class="confirm-btn">Confirmar Reserva</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Cancel Appointment Modal -->
+  <div class="modal-overlay" *ngIf="showCancelModal" (click)="closeCancelModal()">
+    <div class="modal-content cancel-modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Cancelar Cita</h2>
+        <button type="button" class="close-btn" (click)="closeCancelModal()">×</button>
+      </header>
+
+      <div class="modal-body">
+        <p *ngIf="appointmentToCancel">
+          ¿Deseas cancelar la cita de <strong>{{ appointmentToCancel.name }}</strong> a las <strong>{{ appointmentToCancel.time }}</strong>?
+        </p>
+        <p class="warning">Esta acción no se puede deshacer.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="cancel-btn" (click)="closeCancelModal()">No, mantener cita</button>
+        <button type="button" class="danger-btn" (click)="confirmCancelAppointment()">Sí, cancelar cita</button>
+      </div>
     </div>
   </div>
 </section>

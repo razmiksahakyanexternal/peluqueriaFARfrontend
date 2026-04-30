@@ -80,6 +80,11 @@ export class AuthService {
 
   getRole(): string | null {
     return localStorage.getItem(this.roleKey);
+  }
+
+  logout(): void {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.roleKey);
     localStorage.removeItem(this.userNameKey);
     localStorage.removeItem(this.userSurnameKey);
   }
@@ -99,10 +104,5 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!this.getToken();
-  }
-
-  logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.roleKey);
   }
 }
