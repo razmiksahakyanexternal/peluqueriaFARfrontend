@@ -703,9 +703,15 @@
 
 .booking-form {
 	padding: 1.5rem;
+}
+
+.booking-form {
+	padding: 1.5rem;
+padding-bottom: 40px; /* Minimal space for dropdown */
 	display: grid;
 	gap: 1rem;
 }
+
 
 .form-group {
 	display: flex;
@@ -718,6 +724,21 @@
 	color: #495057;
 	font-size: 0.9rem;
 }
+
+.form-group label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.required-asterisk {
+  color: #6c757d;
+}
+
+.error .required-asterisk {
+  color: #dc3545;
+}
+
 
 .form-group input,
 .form-group select {
@@ -858,4 +879,41 @@
 .suggestions-list li span {
 	font-size: 0.8rem;
 	color: #6c757d;
+}
+
+.modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+}
+
+.modal-content {
+	background: #fff;
+	border-radius: 12px;
+	width: 90%;
+	max-width: 500px;
+	max-height: 90vh;
+	overflow-y: auto;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1.5rem;
+	border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h2 {
+	margin: 0;
+	font-size: 1.5rem;
+	color: #1f2e40;
 }
