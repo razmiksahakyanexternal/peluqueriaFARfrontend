@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-registro',
   templateUrl: './registro.component.html',
-  styleUrl: './registro.component.css',
+  styleUrls: ['./registro.component.css'],
   standalone: false
 })
 export class RegistroComponent {
@@ -37,14 +37,13 @@ export class RegistroComponent {
     this.authService.register(nombre, apellidos, email, telefono || '', password).subscribe({
       next: (response) => {
         this.loading = false;
-        console.log('Registro exitoso', response);
-        // Redirigir a la página de inicio de sesión
-        this.router.navigate(['/inicio-sesion']);
+        const state = { ...response, email };
+        sessionStorage.setItem('registerEmail', email);
+        sessionStorage.setItem('registerSuccess', JSON.stringify(state));
+        this.router.navigate(['/registro-exitoso'], { state });
       },
       error: (error) => {
         this.loading = false;
-        console.error('Error en registro:', error);
-        // Manejar diferentes tipos de errores
         if (error.error && typeof error.error === 'object') {
           if (error.error.message) {
             this.errorMessage = error.error.message;

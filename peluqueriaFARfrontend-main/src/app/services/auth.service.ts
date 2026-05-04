@@ -9,6 +9,12 @@ export interface AuthResponse {
   role: string;
 }
 
+export interface RegisterResponse {
+  message: string;
+  verificationUrl?: string | null;
+  verificationEmailSent?: boolean | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -28,6 +34,10 @@ export class AuthService {
     );
   }
 
+  checkEmail(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/check-email`, { email });
+  }
+
   /**
    * Redirige al backend para iniciar sesión con Google.
    */
@@ -38,18 +48,18 @@ export class AuthService {
   /**
    * Registra un nuevo usuario
    */
-  register(name: string, surname: string, email: string, mobilePhone: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, {
+  register(name: string, surname: string, email: string, mobilePhone: string, password: string): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, {
       name,
       surname,
       email,
       mobilePhone,
       password
-    }).pipe(
-      tap(response => {
-        this.saveToken(response.jwtToken);
-      })
-    );
+    });
+  }
+
+  resendVerificationEmail(email: string): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.apiUrl}/resend-verification`, { email });
   }
 
   /**

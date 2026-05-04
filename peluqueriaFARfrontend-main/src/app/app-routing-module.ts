@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { InicioSesionComponent } from './inicio-sesion/inicio-sesion.component';
 import { RegistroComponent } from './registro/registro.component';
+import { RegistroExitosoComponent } from './registro-exitoso/registro-exitoso.component';
 import { HomeComponent } from './home/home.component';
 import { CalendarComponent } from './calendar/calendar.component';
 
@@ -9,6 +10,7 @@ const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'inicio-sesion' },
   { path: 'inicio-sesion', component: InicioSesionComponent },
   { path: 'registro', component: RegistroComponent },
+  { path: 'registro-exitoso', component: RegistroExitosoComponent },
   { path: 'home', component: HomeComponent },
   { path: 'calendario', component: CalendarComponent },
   { path: 'calendar', redirectTo: 'calendario', pathMatch: 'full' },

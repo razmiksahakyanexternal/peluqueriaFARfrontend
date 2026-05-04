@@ -6,6 +6,12 @@
       
       <p class="text-muted mb-3" style="font-size: 0.85rem;">Accede a tu cuenta de peluquería</p>
 
+      <!-- Mensaje de éxito -->
+      <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+      </div>
+
       <!-- Mensaje de error -->
       <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
         {{ errorMessage }}

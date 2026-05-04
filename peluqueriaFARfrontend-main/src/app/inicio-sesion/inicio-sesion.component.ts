@@ -1,13 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { Subject, throwError } from 'rxjs';
-import { takeUntil, finalize, catchError } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { takeUntil, finalize, switchMap, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-inicio-sesion',
   templateUrl: './inicio-sesion.component.html',
-  styleUrl: './inicio-sesion.component.css',
+  styleUrls: ['./inicio-sesion.component.css'],
   standalone: false
 })
 export class InicioSesionComponent implements OnInit, OnDestroy {
@@ -15,6 +15,7 @@ export class InicioSesionComponent implements OnInit, OnDestroy {
   password: string = '';
   loading: boolean = false;
   errorMessage: string = '';
+  successMessage: string = '';
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -35,6 +36,16 @@ export class InicioSesionComponent implements OnInit, OnDestroy {
     if (error) {
       this.errorMessage = decodeURIComponent(error);
     }
+
+    const verificationSent = this.route.snapshot.queryParamMap.get('verificationSent');
+    if (verificationSent === 'true') {
+      this.successMessage = 'Se ha mandado un correo de verificación de la cuenta, si esta existe.';
+    }
+
+    const verified = this.route.snapshot.queryParamMap.get('verified');
+    if (verified === 'true') {
+      this.successMessage = 'Tu cuenta ha sido verificada con éxito. Ya puedes iniciar sesión.';
+    }
   }
 
   ngOnDestroy(): void {
@@ -46,31 +57,41 @@ export class InicioSesionComponent implements OnInit, OnDestroy {
    * Maneja el login con email y contraseña
    */
   loginWithEmail(): void {
+    console.log('loginWithEmail start', { email: this.email });
     if (!this.email || !this.password) {
       this.errorMessage = 'Por favor, completa todos los campos';
       return;
     }
 
-    this.loading = true;
     this.errorMessage = '';
 
-    this.authService.login(this.email, this.password)
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorMessage = this.getErrorMessage(error);
-          return throwError(() => error);
-        }),
-        finalize(() => {
-          this.loading = false;
-        })
-      )
+    this.authService.checkEmail(this.email)
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.router.navigate(['/home']);
+          this.loading = true;
+          this.authService.login(this.email, this.password)
+            .pipe(
+              takeUntil(this.destroy$),
+              finalize(() => {
+                this.loading = false;
+              })
+            )
+            .subscribe({
+              next: () => {
+                this.router.navigate(['/home']);
+              },
+              error: (error) => {
+                console.error('Error en login:', error);
+                this.errorMessage = this.getErrorMessage(error);
+                this.errorMessage = this.errorMessage || 'Error en el inicio de sesión';
+              }
+            });
         },
         error: (error) => {
-          console.error('Error en login:', error);
+          console.error('Error en check-email:', error);
+          this.errorMessage = this.getErrorMessage(error);
+          this.errorMessage = this.errorMessage || 'Error en el inicio de sesión';
         }
       });
   }
@@ -78,6 +99,10 @@ export class InicioSesionComponent implements OnInit, OnDestroy {
   private getErrorMessage(error: any): string {
     if (!error) {
       return 'Error al iniciar sesión';
+    }
+
+    if (error.status === 0) {
+      return 'No se pudo conectar con el servidor. Comprueba que el backend está en ejecución.';
     }
 
     if (error.error) {
