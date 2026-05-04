@@ -26,6 +26,16 @@ services:
       MYSQL_ROOT_PASSWORD: root
     depends_on:
       - mysql
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    depends_on:
+      - mysql
  
 volumes:
   mysql_data:
