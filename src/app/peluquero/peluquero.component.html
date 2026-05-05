@@ -87,7 +87,7 @@
         <article class="week-card">
           <h3>Semana del 15 - 21 Abril 2024</h3>
 
-          <div class="calendar-grid">
+          <div class="calendar-grid week-table">
             <div class="time-head"></div>
 
             <div
@@ -104,7 +104,7 @@
               <div class="time-cell">{{ slot }}</div>
 
               <ng-container *ngFor="let day of weekDays; trackBy: trackByDay">
-                <div class="slot-cell"></div>
+                <div class="slot-cell" [class.blocked]="isSlotBlocked(day.iso, slot)"></div>
               </ng-container>
             </ng-container>
 
@@ -129,7 +129,7 @@
             </div>
 
             <div class="day-list" *ngIf="upcomingAppointments.length > 0; else emptyAgenda">
-              <div class="day-item" *ngFor="let appointment of dayAppointments; trackBy: trackByTime">
+              <div class="day-item" *ngFor="let appointment of upcomingAppointments; trackBy: trackByTime">
                 <span class="avatar">{{ initials(appointment.name) }}</span>
 
                 <div class="appointment-copy">
@@ -153,7 +153,7 @@
             <div class="legend-item"><span class="dot cita"></span><span>Cita</span></div>
             <div class="legend-item"><span class="dot libre"></span><span>Dia Libre</span></div>
             <div class="legend-item"><span class="dot cerrado"></span><span>Cerrado</span></div>
-            <button type="button" class="block-btn">+ Bloquear Hora</button>
+            <button type="button" class="block-btn" (click)="openBlockModal()">+ Bloquear Hora</button>
           </article>
         </div>
       </section>
@@ -205,6 +205,72 @@
           <button type="submit" class="confirm-btn">Confirmar Reserva</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Block Modal -->
+  <div class="modal-overlay" *ngIf="showBlockModal" (click)="closeBlockModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ editingBlockedSlotId ? 'Editar Bloqueo' : 'Bloquear Horario' }}</h2>
+        <button type="button" class="close-btn" (click)="closeBlockModal()">×</button>
+      </header>
+
+      <form class="booking-form" (ngSubmit)="blockSlot()">
+        <div class="feedback success" *ngIf="blockSuccessMessage">{{ blockSuccessMessage }}</div>
+        <div class="feedback error" *ngIf="blockErrorMessage">{{ blockErrorMessage }}</div>
+
+        <div class="form-group">
+          <label for="blockDate">Fecha</label>
+          <input type="date" id="blockDate" [(ngModel)]="blockDate" name="blockDate" required>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" [(ngModel)]="blockAllDay" name="blockAllDay">
+            Bloquear día completo
+          </label>
+        </div>
+
+        <div class="form-group" *ngIf="!blockAllDay">
+          <label for="blockStartTime">Desde</label>
+          <select id="blockStartTime" [(ngModel)]="blockStartTime" name="blockStartTime" required>
+            <option value="">Seleccionar hora</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="!blockAllDay">
+          <label for="blockEndTime">Hasta</label>
+          <select id="blockEndTime" [(ngModel)]="blockEndTime" name="blockEndTime" required>
+            <option value="">Seleccionar hora</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeBlockModal()" [disabled]="isBlocking">Cancelar</button>
+          <button type="submit" class="confirm-btn" [disabled]="isBlocking">
+            {{ editingBlockedSlotId ? 'Actualizar' : 'Guardar Bloqueo' }}
+          </button>
+        </div>
+      </form>
+
+      <section class="blocked-list" *ngIf="blockedSlotsForSelectedDate.length > 0">
+        <h3>Bloqueos del día</h3>
+        <div class="blocked-row" *ngFor="let slot of blockedSlotsForSelectedDate">
+          <div class="blocked-row__info">
+            <strong *ngIf="slot.allDay">Día completo</strong>
+            <strong *ngIf="!slot.allDay">{{ slot.startTime?.slice(0, 5) }} - {{ slot.endTime?.slice(0, 5) }}</strong>
+          </div>
+          <div class="blocked-row__actions">
+            <button type="button" class="ghost-btn" (click)="editBlockedSlot(slot)" [disabled]="isBlocking || isDeletingBlockId === slot.id">Editar</button>
+            <button type="button" class="ghost-btn danger" (click)="deleteBlockedSlot(slot)" [disabled]="isBlocking || isDeletingBlockId === slot.id">
+              {{ isDeletingBlockId === slot.id ? 'Eliminando…' : 'Eliminar' }}
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </section>

@@ -44,7 +44,6 @@ export class RegistroComponent implements OnInit {
     this.authService.register(payload).subscribe({
       next: (response) => {
         this.successMessage = 'Cuenta creada correctamente. Redirigiendo al inicio...';
-        this.authService.saveToken(response.token);
         setTimeout(() => this.router.navigate(['/inicio-sesion']), 1200);
       },
       error: (err) => {

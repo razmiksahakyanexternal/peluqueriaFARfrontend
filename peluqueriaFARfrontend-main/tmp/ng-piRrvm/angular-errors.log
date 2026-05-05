@@ -1,0 +1,12 @@
+[error] Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:421:11)
+    at Object.spawn (node:child_process:796:9)
+    at ensureServiceIsRunning (C:\Users\a950660\OneDrive - ATOS\Documentos\Proyecto\peluqueriaFARfrontend\peluqueriaFARfrontend-main\node_modules\esbuild\lib\main.js:1978:29)
+    at build (C:\Users\a950660\OneDrive - ATOS\Documentos\Proyecto\peluqueriaFARfrontend\peluqueriaFARfrontend-main\node_modules\esbuild\lib\main.js:1876:26)
+    at #performBundle (C:\Users\a950660\OneDrive - ATOS\Documentos\Proyecto\peluqueriaFARfrontend\peluqueriaFARfrontend-main\node_modules\@angular\build\src\tools\esbuild\bundler-context.js:170:52)
+    at BundlerContext.bundle (C:\Users\a950660\OneDrive - ATOS\Documentos\Proyecto\peluqueriaFARfrontend\peluqueriaFARfrontend-main\node_modules\@angular\build\src\tools\esbuild\bundler-context.js:138:49)
+    at C:\Users\a950660\OneDrive - ATOS\Documentos\Proyecto\peluqueriaFARfrontend\peluqueriaFARfrontend-main\node_modules\@angular\build\src\tools\esbuild\bundler-context.js:67:28
+    at Array.map (<anonymous>)
+    at BundlerContext.bundleAll (C:\Users\a950660\OneDrive - ATOS\Documentos\Proyecto\peluqueriaFARfrontend\peluqueriaFARfrontend-main\node_modules\@angular\build\src\tools\esbuild\bundler-context.js:63:67)
+    at executeBuild (C:\Users\a950660\OneDrive - ATOS\Documentos\Proyecto\peluqueriaFARfrontend\peluqueriaFARfrontend-main\node_modules\@angular\build\src\builders\application\execute-build.js:110:65)
+

@@ -315,9 +315,11 @@
 	margin-top: 0.8rem;
 	display: grid;
 	grid-template-columns: 78px repeat(7, minmax(90px, 1fr));
-	grid-auto-rows: 44px;
-	gap: 0.45rem;
+	grid-auto-rows: 40px;
+	gap: 0.32rem;
+	overflow-x: auto;
 }
+
 
 .time-head,
 .day-head,
@@ -359,6 +361,11 @@
 .slot-cell {
 	background: #fff;
 	border: 1px solid #edf1f5;
+}
+
+.slot-cell.blocked {
+	background: #ffe8e8;
+	border-color: #f1b2b2;
 }
 
 .event-chip {
@@ -576,6 +583,14 @@
 	display: grid;
 	gap: 1rem;
 }
+
+.feedback { padding: 0.6rem 0.75rem; border-radius: 10px; font-weight: 700; }
+.feedback.success { background: #e6f6ee; border: 1px solid #9dd7b8; color: #155c37; }
+.feedback.error { background: #fff1f1; border: 1px solid #e3a2a2; color: #7a1f1f; }
+
+.blocked-list h3 { margin: 0; text-align: center; }
+.blocked-row { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.7rem; border: 1px solid #e7edf3; }
+.blocked-row__actions { display: flex; }
 
 .form-group {
 	display: flex;

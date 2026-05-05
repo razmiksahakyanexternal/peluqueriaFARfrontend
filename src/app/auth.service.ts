@@ -16,7 +16,8 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string;
+  jwtToken?: string;
+  token?: string; // compat (por si algun endpoint devuelve token)
   role: string;
   name?: string;
   surname?: string;
@@ -42,6 +43,10 @@ export class AuthService {
 
   login(payload: AuthRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, payload);
+  }
+
+  extractJwtToken(response: AuthResponse): string | null {
+    return response?.jwtToken || response?.token || null;
   }
 
   saveToken(token: string): void {

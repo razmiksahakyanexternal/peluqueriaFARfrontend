@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth.service';
-import { ReservasApiService, AppointmentItem, UserItem } from '../reservas-api.service';
+import { ReservasApiService, AppointmentItem, UserItem, BlockedSlotItem, CreateBlockedSlotRequest } from '../reservas-api.service';
 
 interface AgendaNavItem {
   label: string;
@@ -49,14 +49,19 @@ export class PeluqueroComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private reservasApiService: ReservasApiService
+    private reservasApiService: ReservasApiService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   viewMode: 'day' | 'week' | 'month' = 'week';
   selectedDate = new Date();
   appointments: AppointmentItem[] = [];
+  blockedSlots: BlockedSlotItem[] = [];
+  private blockedByDate = new Map<string, { allDay: boolean; intervals: Array<[number, number]> }>();
+  private blockedCellKeys = new Set<string>();
   users: UserItem[] = [];
   showBookingModal = false;
+  showBlockModal = false;
 
   // Booking form
   bookingDate = '';
@@ -64,6 +69,17 @@ export class PeluqueroComponent implements OnInit {
   selectedUserId: number | null = null;
   guestName = '';
   guestPhone = '';
+
+  // Block form
+  blockDate = '';
+  blockAllDay = false;
+  blockStartTime = '';
+  blockEndTime = '';
+  editingBlockedSlotId: number | null = null;
+  blockSuccessMessage: string | null = null;
+  blockErrorMessage: string | null = null;
+  isBlocking = false;
+  isDeletingBlockId: number | null = null;
 
   weekDays: WeekDay[] = [];
   timeSlots: string[] = [
@@ -111,6 +127,7 @@ export class PeluqueroComponent implements OnInit {
   ngOnInit(): void {
     this.buildWeekDays();
     this.loadAppointments();
+    this.loadBlockedSlots();
     this.loadUsers();
   }
 
@@ -130,6 +147,9 @@ export class PeluqueroComponent implements OnInit {
         weekend: date.getDay() === 0 || date.getDay() === 6
       });
     }
+
+    // Recalcular lookups por si el rango visible cambia
+    this.rebuildBlockedLookups();
   }
 
   private toIsoDate(date: Date): string {
@@ -140,8 +160,22 @@ export class PeluqueroComponent implements OnInit {
   }
 
   get dayAppointments(): DayAppointment[] {
-    // For day view, return appointments for selected date
-    return [];
+    const iso = this.toIsoDate(this.selectedDate);
+    const apptsForDay = this.appointments.filter(a => a.appointmentDate === iso);
+    const isTimeBlocked = (slot: string): boolean => this.isSlotBlocked(iso, slot);
+
+    const byStartTime = new Map(apptsForDay.map(a => [a.startTime.slice(0, 5), a]));
+
+    return this.timeSlots.map((slot) => {
+      const appt = byStartTime.get(slot);
+      if (appt) {
+        return { time: slot, name: appt.guestName || 'Reserva', status: 'none' };
+      }
+      if (isTimeBlocked(slot)) {
+        return { time: slot, name: 'Bloqueado', status: 'blocked' };
+      }
+      return { time: slot, name: '--', status: 'none' };
+    });
   }
 
   get occupiedSlots(): number {
@@ -208,6 +242,29 @@ export class PeluqueroComponent implements OnInit {
     });
   }
 
+  private loadBlockedSlots(): void {
+    const token = this.authService.getToken();
+    if (!token) {
+      this.blockedSlots = [];
+      return;
+    }
+
+    const [start, end] = this.getRangeDates();
+    this.reservasApiService.getBlockedSlotsInRange(start, end, token).subscribe({
+      next: (slots: BlockedSlotItem[]) => {
+        this.blockedSlots = slots;
+        this.rebuildBlockedLookups();
+        this.cdr.detectChanges();
+      },
+      error: (error: any) => {
+        console.error('Error al cargar bloqueos:', error);
+        this.blockedSlots = [];
+        this.rebuildBlockedLookups();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   private loadUsers(): void {
     const token = this.authService.getToken();
     if (!token) {
@@ -233,6 +290,192 @@ export class PeluqueroComponent implements OnInit {
     this.selectedUserId = null;
     this.guestName = '';
     this.guestPhone = '';
+  }
+
+  openBlockModal(): void {
+    this.showBlockModal = true;
+    this.blockDate = this.toIsoDate(this.selectedDate);
+    this.blockAllDay = false;
+    this.blockStartTime = '';
+    this.blockEndTime = '';
+    this.editingBlockedSlotId = null;
+    this.blockSuccessMessage = null;
+    this.blockErrorMessage = null;
+    this.isBlocking = false;
+    this.isDeletingBlockId = null;
+  }
+
+  closeBlockModal(): void {
+    this.showBlockModal = false;
+  }
+
+  get blockedSlotsForSelectedDate(): BlockedSlotItem[] {
+    const iso = this.blockDate || this.toIsoDate(this.selectedDate);
+    return this.blockedSlots.filter(b => b.blockedDate === iso);
+  }
+
+  editBlockedSlot(slot: BlockedSlotItem): void {
+    this.showBlockModal = true;
+    this.editingBlockedSlotId = slot.id;
+    this.blockDate = slot.blockedDate;
+    this.blockAllDay = slot.allDay;
+    this.blockStartTime = slot.startTime ? slot.startTime.slice(0, 5) : '';
+    this.blockEndTime = slot.endTime ? slot.endTime.slice(0, 5) : '';
+  }
+
+  deleteBlockedSlot(slot: BlockedSlotItem): void {
+    const token = this.authService.getToken();
+    if (!token) {
+      alert('No autenticado');
+      return;
+    }
+
+    if (this.isDeletingBlockId) {
+      return;
+    }
+
+    this.blockSuccessMessage = null;
+    this.blockErrorMessage = null;
+    this.isDeletingBlockId = slot.id;
+
+    this.reservasApiService.deleteBlockedSlot(slot.id, token).subscribe({
+      next: () => {
+        // Actualiza UI al instante para evitar sensación de "doble click"
+        this.blockedSlots = this.blockedSlots.filter(b => b.id !== slot.id);
+        this.rebuildBlockedLookups();
+        this.blockSuccessMessage = 'Bloqueo eliminado';
+        this.isDeletingBlockId = null;
+        this.cdr.detectChanges();
+      },
+      error: (error: any) => {
+        console.error('Error al eliminar bloqueo:', error);
+        this.blockErrorMessage = error.error?.message || 'Error desconocido';
+        this.isDeletingBlockId = null;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  blockSlot(): void {
+    if (this.isBlocking) {
+      return;
+    }
+
+    if (!this.blockDate) {
+      this.blockErrorMessage = 'Selecciona fecha';
+      return;
+    }
+
+    const token = this.authService.getToken();
+    if (!token) {
+      this.blockErrorMessage = 'No autenticado';
+      return;
+    }
+
+    const payload: CreateBlockedSlotRequest = {
+      blockedDate: this.blockDate,
+      allDay: this.blockAllDay
+    };
+
+    if (!this.blockAllDay) {
+      if (!this.blockStartTime || !this.blockEndTime) {
+        this.blockErrorMessage = 'Selecciona hora de inicio y fin';
+        return;
+      }
+      payload.startTime = this.blockStartTime + ':00';
+      payload.endTime = this.blockEndTime + ':00';
+    }
+
+    this.blockSuccessMessage = null;
+    this.blockErrorMessage = null;
+    this.isBlocking = true;
+
+    const request$ = this.editingBlockedSlotId
+      ? this.reservasApiService.updateBlockedSlot(this.editingBlockedSlotId, payload, token)
+      : this.reservasApiService.createBlockedSlot(payload, token);
+
+    request$.subscribe({
+      next: (saved: BlockedSlotItem) => {
+        const isEdit = this.editingBlockedSlotId != null;
+        this.blockSuccessMessage = isEdit ? 'Bloqueo actualizado' : 'Bloqueo guardado';
+
+        // Actualización optimista en memoria para que la UI responda al instante
+        if (isEdit) {
+          this.blockedSlots = this.blockedSlots.map(b => (b.id === saved.id ? saved : b));
+        } else {
+          this.blockedSlots = [...this.blockedSlots, saved].sort((a, b) => {
+            const byDate = a.blockedDate.localeCompare(b.blockedDate);
+            if (byDate !== 0) return byDate;
+            const aStart = (a.startTime ?? '99:99:99');
+            const bStart = (b.startTime ?? '99:99:99');
+            return aStart.localeCompare(bStart);
+          });
+        }
+        this.rebuildBlockedLookups();
+
+        this.editingBlockedSlotId = null;
+        this.isBlocking = false;
+
+        // Form listo para crear otro bloqueo
+        this.blockAllDay = false;
+        this.blockStartTime = '';
+        this.blockEndTime = '';
+        this.cdr.detectChanges();
+      },
+      error: (error: any) => {
+        console.error('Error al bloquear:', error);
+        this.blockErrorMessage = error.error?.message || 'Error desconocido';
+        this.isBlocking = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  isSlotBlocked(isoDate: string, timeSlot: string): boolean {
+    return this.blockedCellKeys.has(this.cellKey(isoDate, timeSlot));
+  }
+
+  private rebuildBlockedLookups(): void {
+    this.blockedByDate.clear();
+    for (const slot of this.blockedSlots) {
+      const dateKey = slot.blockedDate;
+      const entry = this.blockedByDate.get(dateKey) ?? { allDay: false, intervals: [] as Array<[number, number]> };
+      if (slot.allDay) {
+        entry.allDay = true;
+      } else if (slot.startTime && slot.endTime) {
+        entry.intervals.push([this.toMinutes(slot.startTime), this.toMinutes(slot.endTime)]);
+      }
+      this.blockedByDate.set(dateKey, entry);
+    }
+
+    // Precompute cells for the visible week/month range to make rendering O(1)
+    this.blockedCellKeys.clear();
+    for (const day of this.weekDays) {
+      const entry = this.blockedByDate.get(day.iso);
+      if (!entry) continue;
+      if (entry.allDay) {
+        for (const ts of this.timeSlots) {
+          this.blockedCellKeys.add(this.cellKey(day.iso, ts));
+        }
+        continue;
+      }
+      if (entry.intervals.length === 0) continue;
+      for (const ts of this.timeSlots) {
+        const slotMin = this.toMinutes(ts);
+        const blocked = entry.intervals.some(([s, e]) => slotMin >= s && slotMin < e);
+        if (blocked) this.blockedCellKeys.add(this.cellKey(day.iso, ts));
+      }
+    }
+  }
+
+  private toMinutes(time: string): number {
+    const hh = parseInt(time.slice(0, 2), 10);
+    const mm = parseInt(time.slice(3, 5), 10);
+    return (hh * 60) + mm;
+  }
+
+  private cellKey(isoDate: string, timeSlot: string): string {
+    return `${isoDate}|${timeSlot}`;
   }
 
   closeBookingModal(): void {
@@ -301,6 +544,7 @@ export class PeluqueroComponent implements OnInit {
   changeView(mode: 'day' | 'week' | 'month'): void {
     this.viewMode = mode;
     this.loadAppointments();
+    this.loadBlockedSlots();
   }
 
   movePeriod(direction: 'prev' | 'next'): void {
@@ -309,6 +553,7 @@ export class PeluqueroComponent implements OnInit {
     this.selectedDate = new Date(this.selectedDate.getTime() + days * 24 * 60 * 60 * 1000 * multiplier);
     this.buildWeekDays();
     this.loadAppointments();
+    this.loadBlockedSlots();
   }
 
   trackByDay(_: number, day: WeekDay): string {

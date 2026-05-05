@@ -33,12 +33,17 @@ export class InicioSesionComponent implements OnInit {
 
     this.authService
       .login({
-        email: form.value.email,
-        password: form.value.password,
+        email: (form.value.email ?? '').trim(),
+        password: (form.value.password ?? '').trim(),
       })
       .subscribe({
         next: (response) => {
-          this.authService.saveToken(response.token);
+          const token = this.authService.extractJwtToken(response);
+          if (!token) {
+            this.errorMessage = 'Login correcto, pero no se recibió token JWT.';
+            return;
+          }
+          this.authService.saveToken(token);
           this.authService.saveRole(response.role);
           if (response.name) {
             this.authService.saveName(response.name);
