@@ -18,11 +18,27 @@ export interface CreateAppointmentResponse {
 	guestName?: string;
 }
 
+export interface UserItem {
+	id: number;
+	name: string;
+	surname: string;
+	email: string;
+}
+
+export interface AppointmentItem {
+	id: number;
+	appointmentDate: string;
+	startTime: string;
+	endTime: string;
+	guestName?: string;
+	guestPhone?: string;
+}
 @Injectable({
-	providedIn: 'root',
+	providedIn: 'root'
 })
 export class ReservasApiService {
 	private readonly baseUrl = 'http://localhost:8081/appointments';
+	private readonly usersUrl = 'http://localhost:8081/users';
 
 	constructor(private http: HttpClient) {}
 
@@ -42,8 +58,6 @@ export class ReservasApiService {
 			params: { date: appointmentDate },
 		});
 	}
-<<<<<<< Updated upstream
-=======
 
 	getMyAppointments(token: string): Observable<AppointmentItem[]> {
 		const headers = new HttpHeaders({
@@ -61,6 +75,22 @@ export class ReservasApiService {
 			params: { start, end },
 		});
 	}
->>>>>>> Stashed changes
+
+getUsers(token: string): Observable<UserItem[]> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<UserItem[]>(this.usersUrl, { headers });
+	}
+
+	searchUsers(query: string, token: string): Observable<UserItem[]> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<UserItem[]>(`${this.usersUrl}/search`, {
+			headers,
+			params: { q: query },
+		});
+	}
 }
 
