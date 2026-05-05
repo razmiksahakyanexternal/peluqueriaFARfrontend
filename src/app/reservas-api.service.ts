@@ -28,10 +28,11 @@ export interface AppointmentResponse {
 }
 
 @Injectable({
-	providedIn: 'root',
+	providedIn: 'root'
 })
 export class ReservasApiService {
 	private readonly baseUrl = 'http://localhost:8081/appointments';
+	private readonly usersUrl = 'http://localhost:8081/users';
 
 	constructor(private http: HttpClient) {}
 
@@ -46,7 +47,7 @@ export class ReservasApiService {
 			headers: this.getHeaders(token)
 		});
 	}
-
+	
 	getOccupiedSlots(appointmentDate: string, token: string): Observable<string[]> {
 		return this.http.get<string[]>(`${this.baseUrl}/occupied`, {
 			headers: this.getHeaders(token),

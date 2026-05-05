@@ -15,7 +15,7 @@
   <div class="reservas-card">
     <div class="reservas-header">
       <h1>Reservar Cita</h1>
-      <button type="button" class="close-btn" (click)="volverAlInicio()">&times;</button>
+      <button type="button" class="close-btn" (click)="volverAlInicio()"></button>
     </div>
 
     <div class="reservas-content">
@@ -44,8 +44,9 @@
               [class.selected]="isSelected(day)"
               [class.weekend]="!isWeekday(day)"
               (click)="selectDate(day)"
-              [disabled]="!isWeekday(day)">
-              {{ day }}
+
+              [disabled]="!isWeekday(day) || (isWeekday(day) && !isFutureDate(day))">
+              {{ day.getDate() }}
             </button>
             <div *ngIf="!day" class="calendar-empty"></div>
           </ng-container>

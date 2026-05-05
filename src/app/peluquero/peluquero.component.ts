@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ReservasApiService, AppointmentResponse, CreateAppointmentRequest } from '../reservas-api.service';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 interface AgendaNavItem {
   label: string;
@@ -39,23 +41,30 @@ interface DayAppointment {
 @Component({
   selector: 'app-peluquero',
   templateUrl: './peluquero.component.html',
-  styleUrl: './peluquero.component.css',
-  standalone: false
+  styleUrl: './peluquero.component.css'
 })
 export class PeluqueroComponent implements OnInit {
+
   users: any[] = [];
   selectedUserId: string | number = '';
   guestName: string = '';
   guestPhone: string = '';
+
   availableTimeSlots: string[] = [];
-  showBookingModal: boolean = false;
   bookingDate: string = '';
   bookingTime: string = '';
-  showCancelModal: boolean = false;
+
+  showBookingModal = false;
+  showCancelModal = false;
+
   appointmentToCancel: DayAppointment | null = null;
-  isLoading: boolean = false;
-  errorMessage: string = '';
+
+  isLoading = false;
+  errorMessage = '';
+
   currentUser: any = null;
+
+  dayAppointments: DayAppointment[] = [];
 
   constructor(
     private authService: AuthService,
@@ -64,7 +73,6 @@ export class PeluqueroComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Verificar que el usuario sea BARBER
     const role = this.authService.getRole();
     if (role !== 'BARBER') {
       this.router.navigate(['/home']);
@@ -80,6 +88,7 @@ export class PeluqueroComponent implements OnInit {
     this.loadUsers();
   }
 
+  // 🔥 NAV
   readonly navItems: AgendaNavItem[] = [
     { label: 'Agenda', active: true },
     { label: 'Configuracion horario' },
@@ -87,14 +96,28 @@ export class PeluqueroComponent implements OnInit {
     { label: 'Clientes' }
   ];
 
+  // 🔥 KPI
   get kpis(): AgendaKpi[] {
     return [
-      { title: 'Citas de Hoy', value: this.totalClients.toString(), hint: `${this.occupiedSlots} bloques activos` },
-      { title: 'Citas Pendientes', value: '0', hint: 'Pendientes de confirmar' },
-      { title: 'Dias Laborables', value: 'Lun - Vie', hint: 'Configurar horario' }
+      {
+        title: 'Citas de Hoy',
+        value: this.totalClients.toString(),
+        hint: `${this.occupiedSlots} bloques activos`
+      },
+      {
+        title: 'Citas Pendientes',
+        value: '0',
+        hint: 'Pendientes de confirmar'
+      },
+      {
+        title: 'Dias Laborables',
+        value: 'Lun - Vie',
+        hint: 'Configurar horario'
+      }
     ];
   }
 
+  // 🔥 CALENDARIO
   readonly weekDays: WeekDay[] = [
     { name: 'Lunes', date: '15' },
     { name: 'Martes', date: '16' },
@@ -105,98 +128,47 @@ export class PeluqueroComponent implements OnInit {
     { name: 'Domingo', date: '21', weekend: true }
   ];
 
-  readonly timeSlots: string[] = [
-    '09:00',
-    '09:15',
-    '09:30',
-    '09:45',
-    '10:00',
-    '10:15',
-    '10:30',
-    '10:45',
-    '11:00',
-    '11:15',
-    '11:30',
-    '11:45'
-  ];
+  readonly calendarEvents: CalendarEvent[] = [];
 
-  readonly calendarEvents: CalendarEvent[] = [
-    { day: 0, start: 1, span: 2, title: 'Ana Lopez', variant: 'cita' },
-    { day: 0, start: 3, span: 1, title: 'Carlos Ruiz', variant: 'cita' },
-    { day: 0, start: 5, span: 2, title: 'Pablo Gomez', variant: 'cita' },
-    { day: 1, start: 2, span: 5, title: 'Dia libre', variant: 'libre' },
-    { day: 2, start: 3, span: 2, title: 'Carlos Diaz', variant: 'cita' },
-    { day: 2, start: 6, span: 1, title: 'Permites', variant: 'cita' },
-    { day: 2, start: 9, span: 2, title: 'Javier Diaz', variant: 'cita' },
-    { day: 3, start: 1, span: 2, title: 'Pena Ramire', variant: 'cita' },
-    { day: 3, start: 3, span: 2, title: '90 min', variant: 'cita' },
-    { day: 3, start: 6, span: 2, title: 'Elena Tides', variant: 'cita' },
-    { day: 3, start: 8, span: 2, title: 'BAJOE DIA', variant: 'cerrado' },
-    { day: 4, start: 1, span: 2, title: 'Pio Ramos', variant: 'cita' },
-    { day: 4, start: 4, span: 2, title: 'Javier Sote', variant: 'cita' },
-    { day: 4, start: 7, span: 2, title: 'Jose Bando', variant: 'cita' }
-  ];
+  // 🔥 FIX ERROR: formattedToday
+  get formattedToday(): string {
+    return new Date().toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }
 
-  dayAppointments: DayAppointment[] = [];
-
+  // 🔥 STATS
   get occupiedSlots(): number {
-    return this.calendarEvents
-      .filter((event) => event.variant === 'cita')
-      .reduce((total, event) => total + event.span, 0);
+    return this.dayAppointments.length;
   }
 
   get totalClients(): number {
-    return this.dayAppointments.filter((appointment) => appointment.name !== '--').length;
-  }
-
-  get occupancyPercent(): number {
-    const total = this.timeSlots.length;
-    return Math.round((this.occupiedSlots / total) * 100);
-  }
-
-  get formattedToday(): string {
-    return 'Jueves, 18 Abril 2024';
+    return this.dayAppointments.filter(a => a.name !== '--').length;
   }
 
   get upcomingAppointments(): DayAppointment[] {
-    return this.dayAppointments.filter((appointment) => appointment.name !== '--');
+    return this.dayAppointments.filter(a => a.name !== '--');
   }
 
   get nextAppointment(): DayAppointment | null {
     return this.upcomingAppointments[0] ?? null;
   }
 
-  trackByTime(_: number, appointment: DayAppointment): string {
-    return `${appointment.time}-${appointment.name}`;
-  }
-
-  trackByLabel(_: number, item: AgendaNavItem): string {
-    return item.label;
-  }
-
-  trackByKpi(_: number, item: AgendaKpi): string {
-    return item.title;
-  }
-
-  trackBySlot(_: number, slot: string): string {
-    return slot;
-  }
-
-  trackByDay(_: number, day: WeekDay): string {
-    return `${day.name}-${day.date}`;
-  }
-
-  trackByEvent(_: number, event: CalendarEvent): string {
-    return `${event.day}-${event.start}-${event.title}`;
-  }
-
+  // 🔥 SAFE INITIALS
   initials(name: string): string {
-    if (name === '--') {
-      return '-';
-    }
+    if (!name || name === '--') return '-';
 
     const parts = name.split(' ');
-    return `${parts[0].charAt(0)}${parts[1] ? parts[1].charAt(0) : ''}`;
+    return (parts[0]?.[0] || '') + (parts[1]?.[0] || '');
+  }
+
+  // 🔥 MODAL CONTROL
+  openBookingModal(): void {
+    this.showBookingModal = true;
+    this.errorMessage = '';
   }
 
   closeBookingModal(): void {
@@ -210,72 +182,8 @@ export class PeluqueroComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  openBookingModal(): void {
-    this.showBookingModal = true;
-    this.errorMessage = '';
-  }
-
-  onBookingDateChange(): void {
-    const token = this.authService.getToken();
-    if (!token || !this.bookingDate) {
-      this.availableTimeSlots = this.getTimeSlots();
-      return;
-    }
-
-    // Obtener franjas ocupadas para la fecha seleccionada
-    this.reservasApiService.getOccupiedSlots(this.bookingDate, token).subscribe({
-      next: (occupiedSlots: string[]) => {
-        const allSlots = this.getTimeSlots();
-        this.availableTimeSlots = allSlots.filter(slot => !occupiedSlots.includes(slot + ':00'));
-      },
-      error: (err) => {
-        console.error('Error al obtener franjas ocupadas:', err);
-        this.availableTimeSlots = this.getTimeSlots();
-      }
-    });
-  }
-
-  bookAppointment(): void {
-    if (!this.bookingDate || !this.bookingTime || !this.guestName) {
-      this.errorMessage = 'Por favor completa todos los campos requeridos';
-      return;
-    }
-
-    const token = this.authService.getToken();
-    if (!token) {
-      this.router.navigate(['/inicio-sesion']);
-      return;
-    }
-
-    const appointmentRequest: CreateAppointmentRequest = {
-      appointmentDate: this.bookingDate,
-      startTime: this.bookingTime + ':00', // Agregar segundos
-      guestName: this.guestName,
-      guestPhone: this.guestPhone
-    };
-
-    this.isLoading = true;
-    this.reservasApiService.createAppointment(appointmentRequest, token).subscribe({
-      next: (response) => {
-        console.log('Cita creada:', response);
-        this.closeBookingModal();
-        this.loadAppointments(); // Recargar lista de citas
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error('Error al crear cita:', err);
-        this.errorMessage = 'Error al crear la cita';
-        this.isLoading = false;
-      }
-    });
-  }
-
-  onUserSelect(userId: string | number): void {
-    this.selectedUserId = userId;
-  }
-
-  openCancelModal(appointment: DayAppointment): void {
-    this.appointmentToCancel = appointment;
+  openCancelModal(app: DayAppointment): void {
+    this.appointmentToCancel = app;
     this.showCancelModal = true;
   }
 
@@ -284,8 +192,31 @@ export class PeluqueroComponent implements OnInit {
     this.showCancelModal = false;
   }
 
-  confirmCancelAppointment(): void {
-    if (!this.appointmentToCancel) {
+  // 🔥 BOOKING
+  onBookingDateChange(): void {
+    const token = this.authService.getToken();
+
+    if (!token || !this.bookingDate) {
+      this.availableTimeSlots = this.getTimeSlots();
+      return;
+    }
+
+    this.reservasApiService.getOccupiedSlots(this.bookingDate, token).subscribe({
+      next: (occupied: string[]) => {
+        const all = this.getTimeSlots();
+        this.availableTimeSlots = all.filter(slot =>
+          !occupied.includes(slot + ':00')
+        );
+      },
+      error: () => {
+        this.availableTimeSlots = this.getTimeSlots();
+      }
+    });
+  }
+
+  bookAppointment(): void {
+    if (!this.bookingDate || !this.bookingTime || !this.guestName) {
+      this.errorMessage = 'Completa los campos obligatorios';
       return;
     }
 
@@ -295,20 +226,52 @@ export class PeluqueroComponent implements OnInit {
       return;
     }
 
+    const request: CreateAppointmentRequest = {
+      appointmentDate: this.bookingDate,
+      startTime: this.bookingTime + ':00',
+      guestName: this.guestName,
+      guestPhone: this.guestPhone
+    };
+
     this.isLoading = true;
-    this.reservasApiService.deleteAppointment(this.appointmentToCancel.id, token).subscribe({
+
+    this.reservasApiService.createAppointment(request, token).subscribe({
       next: () => {
-        console.log('Cita cancelada:', this.appointmentToCancel);
-        this.closeCancelModal();
-        this.loadAppointments(); // Recargar lista de citas
+        this.closeBookingModal();
+        this.loadAppointments();
         this.isLoading = false;
       },
-      error: (err) => {
-        console.error('Error al cancelar cita:', err);
-        this.errorMessage = 'Error al cancelar la cita';
+      error: () => {
+        this.errorMessage = 'Error al crear la cita';
         this.isLoading = false;
       }
     });
+  }
+
+  confirmCancelAppointment(): void {
+    if (!this.appointmentToCancel) return;
+
+    const token = this.authService.getToken();
+    if (!token) {
+      this.router.navigate(['/inicio-sesion']);
+      return;
+    }
+
+    this.isLoading = true;
+
+    this.reservasApiService
+      .deleteAppointment(this.appointmentToCancel.id, token)
+      .subscribe({
+        next: () => {
+          this.closeCancelModal();
+          this.loadAppointments();
+          this.isLoading = false;
+        },
+        error: () => {
+          this.errorMessage = 'Error al cancelar la cita';
+          this.isLoading = false;
+        }
+      });
   }
 
   logout(): void {
@@ -316,6 +279,7 @@ export class PeluqueroComponent implements OnInit {
     this.router.navigate(['/inicio-sesion']);
   }
 
+  // 🔥 LOAD DATA
   private loadAppointments(): void {
     const token = this.authService.getToken();
     if (!token) {
@@ -323,49 +287,47 @@ export class PeluqueroComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = '';
-
-    // Obtener citas de hoy - usando rango de hoy
     const today = new Date().toISOString().split('T')[0];
-    this.reservasApiService.getAppointmentsInRange(today, today, token).subscribe({
-      next: (appointments: AppointmentResponse[]) => {
-        this.dayAppointments = appointments.map(apt => ({
-          id: apt.id,
-          time: apt.startTime.substring(0, 5), // Convertir HH:mm:ss a HH:mm
-          name: apt.guestName || 'Sin nombre'
-        }));
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error('Error al cargar citas:', err);
-        this.errorMessage = 'Error al cargar las citas';
-        this.isLoading = false;
-      }
-    });
+    this.isLoading = true;
+
+    this.reservasApiService
+      .getAppointmentsInRange(today, today, token)
+      .subscribe({
+        next: (appointments: AppointmentResponse[]) => {
+          this.dayAppointments = appointments.map(a => ({
+            id: a.id,
+            time: a.startTime.substring(0, 5),
+            name: a.guestName || 'Sin nombre'
+          }));
+          this.isLoading = false;
+        },
+        error: () => {
+          this.errorMessage = 'Error al cargar citas';
+          this.isLoading = false;
+        }
+      });
   }
 
   private loadUsers(): void {
-    // Por ahora, cargamos usuarios de ejemplo
-    // En una implementación real, esto vendría del backend
     this.users = [
-      { id: 1, name: 'Ana', surname: 'Lopez', email: 'ana@example.com' },
-      { id: 2, name: 'Carlos', surname: 'Ruiz', email: 'carlos@example.com' },
-      { id: 3, name: 'Maria', surname: 'Garcia', email: 'maria@example.com' }
+      { id: 1, name: 'Ana', surname: 'Lopez' },
+      { id: 2, name: 'Carlos', surname: 'Ruiz' },
+      { id: 3, name: 'Maria', surname: 'Garcia' }
     ];
   }
 
-  private getTimeSlots(): string[] {
+  // 🔥 TIME SLOTS
+  getTimeSlots(): string[] {
     return [
-      '09:00', '09:15', '09:30', '09:45',
-      '10:00', '10:15', '10:30', '10:45',
-      '11:00', '11:15', '11:30', '11:45',
-      '12:00', '12:15', '12:30', '12:45',
-      '13:00', '13:15', '13:30', '13:45',
-      '14:00', '14:15', '14:30', '14:45',
-      '15:00', '15:15', '15:30', '15:45',
-      '16:00', '16:15', '16:30', '16:45',
-      '17:00', '17:15', '17:30', '17:45',
+      '09:00','09:15','09:30','09:45',
+      '10:00','10:15','10:30','10:45',
+      '11:00','11:15','11:30','11:45',
+      '12:00','12:15','12:30','12:45',
+      '13:00','13:15','13:30','13:45',
+      '14:00','14:15','14:30','14:45',
+      '15:00','15:15','15:30','15:45',
+      '16:00','16:15','16:30','16:45',
+      '17:00','17:15','17:30','17:45',
       '18:00'
     ];
   }
