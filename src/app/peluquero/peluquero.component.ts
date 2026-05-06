@@ -1,70 +1,57 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { ReservasApiService, AppointmentResponse, CreateAppointmentRequest } from '../reservas-api.service';
-import { FormsModule } from '@angular/forms';
+import { ReservasApiService, AppointmentResponse } from '../reservas-api.service';
 import { CommonModule } from '@angular/common';
-
-interface AgendaNavItem {
-  label: string;
-  active?: boolean;
-}
-
-interface AgendaKpi {
-  title: string;
-  value: string;
-  hint: string;
-}
-
-interface WeekDay {
-  name: string;
-  date: string;
-  weekend?: boolean;
-  selected?: boolean;
-}
-
-interface CalendarEvent {
-  day: number;
-  start: number;
-  span: number;
-  title: string;
-  variant: 'cita' | 'libre' | 'cerrado';
-}
+import { FormsModule } from '@angular/forms';
 
 interface DayAppointment {
   id: number;
   time: string;
   name: string;
-  status?: 'none' | 'blocked';
+  appointmentDate: string;
 }
 
 @Component({
   selector: 'app-peluquero',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './peluquero.component.html',
   styleUrl: './peluquero.component.css'
 })
 export class PeluqueroComponent implements OnInit {
 
-  users: any[] = [];
-  selectedUserId: string | number = '';
-  guestName: string = '';
-  guestPhone: string = '';
-
-  availableTimeSlots: string[] = [];
-  bookingDate: string = '';
-  bookingTime: string = '';
-
-  showBookingModal = false;
-  showCancelModal = false;
-
-  appointmentToCancel: DayAppointment | null = null;
-
-  isLoading = false;
-  errorMessage = '';
+  viewMode: 'day' | 'week' | 'month' = 'week';
 
   currentUser: any = null;
 
+  // WEEK
+  currentWeekOffset = 0;
+  calendarDays: any[] = [];
+
+  // MONTH
+  currentMonthOffset = 0;
+  monthDays: any[] = [];
+
+  // DAY
+  selectedDay: any = null;
+
+  // APPOINTMENTS
   dayAppointments: DayAppointment[] = [];
+  appointmentsByDay: { [key: string]: DayAppointment[] } = {};
+
+  timeSlots: string[] = [
+    '09:00','09:15','09:30','09:45',
+    '10:00','10:15','10:30','10:45',
+    '11:00','11:15','11:30','11:45',
+    '12:00','12:15','12:30','12:45',
+    '13:00','13:15','13:30','13:45',
+    '14:00','14:15','14:30','14:45',
+    '15:00','15:15','15:30','15:45',
+    '16:00','16:15','16:30','16:45',
+    '17:00','17:15','17:30','17:45',
+    '18:00'
+  ];
 
   constructor(
     private authService: AuthService,
@@ -73,262 +60,224 @@ export class PeluqueroComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const role = this.authService.getRole();
-    if (role !== 'BARBER') {
-      this.router.navigate(['/home']);
-      return;
-    }
 
     this.currentUser = {
       name: this.authService.getName(),
       surname: this.authService.getSurname()
     };
 
+    this.updateCalendar();
+  }
+
+  // =========================
+  // 🔥 VIEW SWITCH
+  // =========================
+  setView(mode: 'day' | 'week' | 'month') {
+    this.viewMode = mode;
+
+    if (mode === 'month') {
+      this.buildMonth();
+    }
+
+    if (mode === 'week' || mode === 'day') {
+      this.updateCalendar();
+    }
+  }
+
+  // =========================
+  // 🔥 WEEK CONTROL
+  // =========================
+  setWeek(offset: number) {
+    this.currentWeekOffset = offset;
+    this.updateCalendar();
+  }
+
+  nextWeek() { this.setWeek(this.currentWeekOffset + 1); }
+  prevWeek() { this.setWeek(this.currentWeekOffset - 1); }
+  goToday() { this.setWeek(0); }
+
+  // =========================
+  // 🔥 MAIN WEEK BUILDER
+  // =========================
+  updateCalendar() {
+
+    const today = new Date();
+    today.setDate(today.getDate() + this.currentWeekOffset * 7);
+
+    const week: any[] = [];
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay());
+
+    for (let i = 0; i < 7; i++) {
+
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+
+      const iso = this.normalizeDate(date.toISOString());
+
+      week.push({
+        name: days[date.getDay()],
+        date: date.getDate(),
+        iso
+      });
+    }
+
+    this.calendarDays = week;
+
+    if (!this.selectedDay) {
+      this.selectedDay = this.calendarDays[0];
+    } else {
+      const match = this.calendarDays.find(d => d.iso === this.selectedDay.iso);
+      this.selectedDay = match || this.calendarDays[0];
+    }
+
     this.loadAppointments();
-    this.loadUsers();
   }
 
-  // 🔥 NAV
-  readonly navItems: AgendaNavItem[] = [
-    { label: 'Agenda', active: true },
-    { label: 'Configuracion horario' },
-    { label: 'Historial' },
-    { label: 'Clientes' }
-  ];
+  // =========================
+  // 🔥 MONTH BUILDER (FIX REAL)
+  // =========================
+  buildMonth() {
 
-  // 🔥 KPI
-  get kpis(): AgendaKpi[] {
-    return [
-      {
-        title: 'Citas de Hoy',
-        value: this.totalClients.toString(),
-        hint: `${this.occupiedSlots} bloques activos`
-      },
-      {
-        title: 'Citas Pendientes',
-        value: '0',
-        hint: 'Pendientes de confirmar'
-      },
-      {
-        title: 'Dias Laborables',
-        value: 'Lun - Vie',
-        hint: 'Configurar horario'
-      }
-    ];
-  }
+    const today = new Date();
+    today.setMonth(today.getMonth() + this.currentMonthOffset);
 
-  // 🔥 CALENDARIO
-  readonly weekDays: WeekDay[] = [
-    { name: 'Lunes', date: '15' },
-    { name: 'Martes', date: '16' },
-    { name: 'Miercoles', date: '17' },
-    { name: 'Jueves', date: '18', selected: true },
-    { name: 'Viernes', date: '19' },
-    { name: 'Sabado', date: '20', weekend: true },
-    { name: 'Domingo', date: '21', weekend: true }
-  ];
+    const year = today.getFullYear();
+    const month = today.getMonth();
 
-  readonly calendarEvents: CalendarEvent[] = [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // 🔥 FIX ERROR: formattedToday
-  get formattedToday(): string {
-    return new Date().toLocaleDateString('es-ES', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-  }
+    const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-  // 🔥 STATS
-  get occupiedSlots(): number {
-    return this.dayAppointments.length;
-  }
+    const days: any[] = [];
 
-  get totalClients(): number {
-    return this.dayAppointments.filter(a => a.name !== '--').length;
-  }
+    for (let i = 1; i <= daysInMonth; i++) {
 
-  get upcomingAppointments(): DayAppointment[] {
-    return this.dayAppointments.filter(a => a.name !== '--');
-  }
+      const date = new Date(year, month, i);
+      const iso = this.normalizeDate(date.toISOString());
 
-  get nextAppointment(): DayAppointment | null {
-    return this.upcomingAppointments[0] ?? null;
-  }
-
-  // 🔥 SAFE INITIALS
-  initials(name: string): string {
-    if (!name || name === '--') return '-';
-
-    const parts = name.split(' ');
-    return (parts[0]?.[0] || '') + (parts[1]?.[0] || '');
-  }
-
-  // 🔥 MODAL CONTROL
-  openBookingModal(): void {
-    this.showBookingModal = true;
-    this.errorMessage = '';
-  }
-
-  closeBookingModal(): void {
-    this.guestName = '';
-    this.guestPhone = '';
-    this.selectedUserId = '';
-    this.availableTimeSlots = [];
-    this.bookingDate = '';
-    this.bookingTime = '';
-    this.showBookingModal = false;
-    this.errorMessage = '';
-  }
-
-  openCancelModal(app: DayAppointment): void {
-    this.appointmentToCancel = app;
-    this.showCancelModal = true;
-  }
-
-  closeCancelModal(): void {
-    this.appointmentToCancel = null;
-    this.showCancelModal = false;
-  }
-
-  // 🔥 BOOKING
-  onBookingDateChange(): void {
-    const token = this.authService.getToken();
-
-    if (!token || !this.bookingDate) {
-      this.availableTimeSlots = this.getTimeSlots();
-      return;
+      days.push({
+        name: weekDays[date.getDay()],
+        date: i,
+        iso
+      });
     }
 
-    this.reservasApiService.getOccupiedSlots(this.bookingDate, token).subscribe({
-      next: (occupied: string[]) => {
-        const all = this.getTimeSlots();
-        this.availableTimeSlots = all.filter(slot =>
-          !occupied.includes(slot + ':00')
-        );
-      },
-      error: () => {
-        this.availableTimeSlots = this.getTimeSlots();
-      }
-    });
+    this.monthDays = days;
+
+    this.loadAppointments();
   }
 
-  bookAppointment(): void {
-    if (!this.bookingDate || !this.bookingTime || !this.guestName) {
-      this.errorMessage = 'Completa los campos obligatorios';
-      return;
-    }
-
-    const token = this.authService.getToken();
-    if (!token) {
-      this.router.navigate(['/inicio-sesion']);
-      return;
-    }
-
-    const request: CreateAppointmentRequest = {
-      appointmentDate: this.bookingDate,
-      startTime: this.bookingTime + ':00',
-      guestName: this.guestName,
-      guestPhone: this.guestPhone
-    };
-
-    this.isLoading = true;
-
-    this.reservasApiService.createAppointment(request, token).subscribe({
-      next: () => {
-        this.closeBookingModal();
-        this.loadAppointments();
-        this.isLoading = false;
-      },
-      error: () => {
-        this.errorMessage = 'Error al crear la cita';
-        this.isLoading = false;
-      }
-    });
+  // =========================
+  // 🔥 MONTH NAV
+  // =========================
+  nextMonth() {
+    this.currentMonthOffset++;
+    this.buildMonth();
   }
 
-  confirmCancelAppointment(): void {
-    if (!this.appointmentToCancel) return;
+  prevMonth() {
+    this.currentMonthOffset--;
+    this.buildMonth();
+  }
 
-    const token = this.authService.getToken();
-    if (!token) {
-      this.router.navigate(['/inicio-sesion']);
-      return;
-    }
+  // =========================
+  // 🔥 APPOINTMENTS
+  // =========================
+  loadAppointments(): void {
 
-    this.isLoading = true;
+    const token = this.authService.getToken()!;
+    if (!this.calendarDays.length && !this.monthDays.length) return;
 
-    this.reservasApiService
-      .deleteAppointment(this.appointmentToCancel.id, token)
-      .subscribe({
-        next: () => {
-          this.closeCancelModal();
-          this.loadAppointments();
-          this.isLoading = false;
-        },
-        error: () => {
-          this.errorMessage = 'Error al cancelar la cita';
-          this.isLoading = false;
-        }
+    const source = this.viewMode === 'month'
+      ? this.monthDays
+      : this.calendarDays;
+
+    const start = source[0].iso;
+    const end = source[source.length - 1].iso;
+
+    this.reservasApiService.getAppointmentsInRange(start, end, token)
+      .subscribe((res: AppointmentResponse[]) => {
+
+        this.dayAppointments = res.map(a => ({
+          id: a.id,
+          time: a.startTime.substring(0, 5),
+          name: a.guestName,
+          appointmentDate: this.normalizeDate((a as any).appointmentDate)
+        }));
+
+        this.groupAppointments();
       });
   }
 
-  logout(): void {
+  groupAppointments() {
+
+    this.appointmentsByDay = {};
+
+    for (let appt of this.dayAppointments) {
+
+      if (!this.appointmentsByDay[appt.appointmentDate]) {
+        this.appointmentsByDay[appt.appointmentDate] = [];
+      }
+
+      this.appointmentsByDay[appt.appointmentDate].push(appt);
+    }
+  }
+
+  // =========================
+  // 🔥 DAY NAV
+  // =========================
+  nextDay() {
+    const idx = this.calendarDays.indexOf(this.selectedDay);
+    if (idx < this.calendarDays.length - 1) {
+      this.selectedDay = this.calendarDays[idx + 1];
+    }
+  }
+
+  prevDay() {
+    const idx = this.calendarDays.indexOf(this.selectedDay);
+    if (idx > 0) {
+      this.selectedDay = this.calendarDays[idx - 1];
+    }
+  }
+
+  // =========================
+  // 🔥 HELPERS
+  // =========================
+  normalizeDate(date: string): string {
+    return date ? date.split('T')[0] : '';
+  }
+
+  getAppointmentsAt(day: any, time: string) {
+    if (!day) return [];
+    return (this.appointmentsByDay[day.iso] || []).filter(a => a.time === time);
+  }
+
+  getAppointmentsByDay(day: any) {
+    return this.appointmentsByDay[day.iso] || [];
+  }
+
+  // =========================
+  // 🔥 UI
+  // =========================
+  get kpis() {
+    return [
+      { title: 'Citas', value: this.dayAppointments.length, hint: 'Semana' },
+      { title: 'Clientes', value: this.dayAppointments.length, hint: 'Activos' },
+      { title: 'Horario', value: '09-18', hint: 'Laboral' }
+    ];
+  }
+
+  get nextAppointment() {
+    return this.dayAppointments[0] || null;
+  }
+
+  openBookingModal() {}
+
+  logout() {
     this.authService.logout();
     this.router.navigate(['/inicio-sesion']);
-  }
-
-  // 🔥 LOAD DATA
-  private loadAppointments(): void {
-    const token = this.authService.getToken();
-    if (!token) {
-      this.router.navigate(['/inicio-sesion']);
-      return;
-    }
-
-    const today = new Date().toISOString().split('T')[0];
-    this.isLoading = true;
-
-    this.reservasApiService
-      .getAppointmentsInRange(today, today, token)
-      .subscribe({
-        next: (appointments: AppointmentResponse[]) => {
-          this.dayAppointments = appointments.map(a => ({
-            id: a.id,
-            time: a.startTime.substring(0, 5),
-            name: a.guestName || 'Sin nombre'
-          }));
-          this.isLoading = false;
-        },
-        error: () => {
-          this.errorMessage = 'Error al cargar citas';
-          this.isLoading = false;
-        }
-      });
-  }
-
-  private loadUsers(): void {
-    this.users = [
-      { id: 1, name: 'Ana', surname: 'Lopez' },
-      { id: 2, name: 'Carlos', surname: 'Ruiz' },
-      { id: 3, name: 'Maria', surname: 'Garcia' }
-    ];
-  }
-
-  // 🔥 TIME SLOTS
-  getTimeSlots(): string[] {
-    return [
-      '09:00','09:15','09:30','09:45',
-      '10:00','10:15','10:30','10:45',
-      '11:00','11:15','11:30','11:45',
-      '12:00','12:15','12:30','12:45',
-      '13:00','13:15','13:30','13:45',
-      '14:00','14:15','14:30','14:45',
-      '15:00','15:15','15:30','15:45',
-      '16:00','16:15','16:30','16:45',
-      '17:00','17:15','17:30','17:45',
-      '18:00'
-    ];
   }
 }

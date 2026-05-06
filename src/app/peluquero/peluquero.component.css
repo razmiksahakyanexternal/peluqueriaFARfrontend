@@ -311,78 +311,88 @@
 	padding: 0.72rem;
 }
 
-.calendar-grid {
-	margin-top: 0.8rem;
-	display: grid;
-	grid-template-columns: 78px repeat(7, minmax(90px, 1fr));
-	grid-auto-rows: 44px;
-	gap: 0.45rem;
-}
 
-.time-head,
-.day-head,
-.time-cell,
-.slot-cell,
-.event-chip {
+
+.time-head{
 	border-radius: 8px;
 }
 
-.day-head,
-.time-cell,
-.slot-cell {
+
+
+
+
+
+
+
+
+
+.calendar-grid {
 	display: grid;
-	place-items: center;
-}
-
-.day-head {
-	background: #eef3f7;
+	grid-template-columns: 90px repeat(7, 1fr);
+	width: 100%;
 	border: 1px solid #dde5ec;
-	padding: 0.4rem;
-}
-
-.day-head.selected {
-	background: #1f2e40;
-	color: #fff;
-}
-
-.day-head.weekend {
-	opacity: 0.65;
-}
-
-.time-cell {
-	font-size: 0.85rem;
-	color: #617284;
-	background: #f8fafb;
-	border: 1px solid #e4e9ef;
-}
-
-.slot-cell {
+	border-radius: 12px;
+	overflow: hidden;
 	background: #fff;
-	border: 1px solid #edf1f5;
 }
 
-.event-chip {
+/* HEADER DÍAS */
+.day-head {
+	background: #f3f6fa;
+	border-bottom: 1px solid #dde5ec;
+	border-right: 1px solid #e3e9ef;
+	padding: 0.8rem 0;
+	text-align: center;
+	font-weight: 700;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.day-head span {
+	font-size: 0.75rem;
+	color: #6c7b8c;
+}
+
+/* HORA IZQUIERDA */
+.time-cell {
+	height: 60px;
 	display: flex;
 	align-items: center;
-	padding: 0.55rem 0.6rem;
-	font-size: 0.83rem;
+	justify-content: center;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #617284;
+	background: #f8fafc;
+	border-right: 1px solid #dde5ec;
+	border-top: 1px solid #edf1f5;
+}
+
+/* CELDAS REJILLA */
+.slot-cell {
+	height: 60px;
+	border-top: 1px solid #edf1f5;
+	border-right: 1px solid #edf1f5;
+	background: #fff;
+	position: relative;
+}
+
+/* efecto hover limpio */
+.slot-cell:hover {
+	background: #f6f9fc;
+}
+
+/* EVENTOS */
+.event-chip {
+	margin: 2px;
+	padding: 0.4rem 0.5rem;
+	font-size: 0.75rem;
 	font-weight: 700;
-	color: #1f2b28;
+	border-radius: 8px;
 	background: #d9efe5;
-	border-left: 5px solid #4da882;
-	z-index: 1;
-}
-
-.event-chip.free {
-	color: #39536f;
-	background: #dde8f4;
-	border-left-color: #a5b0bc;
-}
-
-.event-chip.closed {
-	color: #992a2a;
-	background: #f6d2d2;
-	border-left-color: #d35656;
+	border-left: 4px solid #4da882;
+	display: inline-block;
 }
 
 .side-column {
@@ -507,10 +517,6 @@
 		align-items: flex-start;
 	}
 
-	.calendar-grid {
-		grid-template-columns: 62px repeat(7, minmax(72px, 1fr));
-		overflow-x: auto;
-	}
 }
 
 /* Booking Modal Styles */
@@ -706,4 +712,218 @@
 
 .danger-btn:hover {
 	background: #c82333;
+}
+
+/* =========================
+   🔥 VIEW SWITCH (DÍA / SEMANA / MES)
+========================= */
+
+.view-switch {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+	background: #eef3f7;
+	padding: 0.35rem;
+	border-radius: 10px;
+	border: 1px solid #dbe1e8;
+}
+
+.view-btn {
+	border: none;
+	background: transparent;
+	padding: 0.5rem 0.9rem;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 0.85rem;
+	color: #4b5b6b;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+	background: #dfe7ef;
+	color: #1f2e40;
+}
+
+/* ACTIVO (como "Añadir cita") */
+.view-btn.active {
+	background: #1f2e40;
+	color: #fff;
+	box-shadow: 0 4px 10px rgba(31, 46, 64, 0.25);
+}
+
+/* efecto click suave */
+.view-btn:active {
+	transform: scale(0.97);
+}
+
+/* =========================
+   NAV CALENDARIO (SEMANA/DÍA)
+========================= */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* botones tipo navegación */
+.calendar-nav button {
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: #333;
+}
+
+/* hover suave */
+.calendar-nav button:hover {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+}
+
+/* botón "Hoy" más destacado */
+.calendar-nav button:nth-child(2) {
+  background: #111;
+  color: #fff;
+  border: none;
+}
+
+.calendar-nav button:nth-child(2):hover {
+  background: #333;
+}
+
+/* =========================
+   NAVEGACIÓN DÍA
+========================= */
+.day-nav {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.day-nav button {
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.day-nav button:hover {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+}
+
+.event-chip {
+  width: 90%;
+  margin: 3px auto;
+  padding: 8px 10px;
+  border-radius: 10px;
+
+  background: #22c55e; /* 👈 verde bonito */
+  color: #fff;
+
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+
+  transition: all 0.2s ease;
+}
+
+/* hover */
+.event-chip:hover {
+  background: #16a34a; /* verde más oscuro */
+  transform: scale(1.03);
+}
+/* =========================
+   📅 MES - GRID CALENDARIO
+========================= */
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  padding: 20px;
+}
+
+/* Header navegación mes */
+.month-header {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.month-header button {
+  background: #111;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.month-header button:hover {
+  background: #333;
+}
+
+/* Cada día del mes */
+.month-day {
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  border-radius: 12px;
+  min-height: 120px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  transition: 0.2s;
+}
+
+.month-day:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+/* Número del día */
+.month-day-header {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+/* Zona de eventos */
+.month-events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+/* Evento dentro del mes */
+.month-events .event-chip {
+  background: #2ecc71; /* verde como pediste */
+  color: white;
+  font-size: 11px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

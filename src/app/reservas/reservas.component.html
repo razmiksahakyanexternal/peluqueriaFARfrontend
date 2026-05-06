@@ -46,7 +46,7 @@
               (click)="selectDate(day)"
 
               [disabled]="!isWeekday(day) || (isWeekday(day) && !isFutureDate(day))">
-              {{ day.getDate() }}
+              {{day}}
             </button>
             <div *ngIf="!day" class="calendar-empty"></div>
           </ng-container>
