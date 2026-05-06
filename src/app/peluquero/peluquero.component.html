@@ -71,7 +71,7 @@
             <button type="button" class="toggle-btn">Semana</button>
           </div>
 
-          <button type="button" class="add-btn">+ Anadir Cita ▾</button>
+          <button type="button" class="add-btn" (click)="openBookingModal()">+ Anadir Cita</button>
         </div>
       </section>
 
@@ -159,4 +159,100 @@
       </section>
     </main>
   </div>
+
+  <!-- Pantalla elección tipo de cliente -->
+<div class="modal-overlay" *ngIf="showBookingOptions" (click)="openBookingModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+
+    <header class="modal-header">
+      <h2>TIPO DE CLIENTE PARA AÑADIR CITA</h2>
+    </header>
+
+    <div class="option-buttons">
+      <button type="button" (click)="openRegisteredBooking()">
+        Cliente registrado
+      </button>
+
+      <button type="button" (click)="openUnregisteredBooking()">
+        Cliente no registrado
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Reserva -->
+<div class="modal-overlay" *ngIf="showBookingModal" (click)="closeBookingModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+
+    <header class="modal-header">
+      <h2>Reservar Cita</h2>
+      <button type="button" class="close-btn" (click)="closeBookingModal()">×</button>
+    </header>
+
+    <form class="booking-form" (ngSubmit)="bookAppointment()">
+
+      <!-- FECHA -->
+      <div class="form-group" [class.error]="submitted && !bookingDate">
+        <label for="bookingDate">Fecha <span class="required-asterisk">*</span></label>
+        <input type="date" id="bookingDate" [(ngModel)]="bookingDate" name="bookingDate" [min]="todayIso" [class.error-input]="submitted && !bookingDate">
+        <p class="error-message" *ngIf="submitted && !bookingDate">{{ dateError }}</p>
+      </div>
+
+      <!-- HORA -->
+      <div class="form-group" [class.error]="submitted && !bookingTime">
+        <label for="bookingTime">Hora <span class="required-asterisk">*</span></label>
+        <select id="bookingTime" [(ngModel)]="bookingTime" name="bookingTime" [class.error-input]="submitted && !bookingTime">
+          <option value="">Seleccionar hora</option>
+          <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+        </select>
+        <p class="error-message" *ngIf="submitted && !bookingTime">{{ timeError }}</p>
+      </div>
+
+      <!-- CLIENTE REGISTRADO -->
+      <div *ngIf="clientType === 'registered'">
+        <!-- buscador -->
+        <div class="form-group autocomplete-group" [class.error]="submitted && !selectedUserId">
+          <label for="userSearch">Cliente Registrado <span class="required-asterisk">*</span></label>
+          <div class="autocomplete-wrapper">
+            <input type="text" id="userSearch" [(ngModel)]="userSearchQuery" name="userSearch" (input)="onUserSearch($event)" (blur)="onBlurUser()" (focus)="onFocusUser()" placeholder="Busca el usuario por sus apellidos..." [class.error-input]="submitted && !selectedUserId" autocomplete="off">
+            <button type="button" class="clear-search-btn" *ngIf="userSearchQuery" (click)="clearUser()">×</button>
+          </div>
+          <ul class="suggestions-list" *ngIf="showUserSuggestions">
+            <li *ngFor="let user of userSuggestions" (click)="selectUser(user)">{{ user.name }} {{ user.surname }} ({{ user.email }})</li>
+          </ul>
+          <p class="error-message" *ngIf="submitted && !selectedUserId">{{ guestNameError }}</p>
+        </div>
+
+        <!-- AUTO-NOMBRE CLIENTE -->
+        <div class="form-group">
+          <label for="guestName">Nombre del Cliente</label>
+          <input type="text" id="guestName" [(ngModel)]="guestName" name="guestName" [disabled]="!!selectedUserId">
+        </div>
+      </div>
+
+      <!-- CLIENTE NO REGISTRADO -->
+      <div *ngIf="clientType === 'unregistered'">
+        <div class="form-group" [class.error]="submitted && !guestName">
+          <label>Nombre del cliente <span class="required-asterisk">*</span></label>
+          <input type="text" [(ngModel)]="guestName" name="guestName" placeholder="Nombre completo del cliente" [class.error-input]="submitted && !guestName">
+          <p class="error-message" *ngIf="submitted && !guestName">El nombre es obligatorio</p>
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono (opcional)</label>
+          <input type="text" [(ngModel)]="guestPhone" name="guestPhone" placeholder="Número de teléfono">
+        </div>
+      </div>
+
+      <!-- ACCIONES -->
+      <div class="form-actions">
+        <button type="button" class="cancel-btn" (click)="closeBookingModal()">Cancelar</button>
+        <button type="button" class="confirm-btn" (click)="bookAppointment()">Confirmar Reserva</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
 </section>
