@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ReservasApiService, AppointmentResponse } from '../reservas-api.service';
@@ -25,18 +25,14 @@ export class PeluqueroComponent implements OnInit {
 
   currentUser: any = null;
 
-  // WEEK
   currentWeekOffset = 0;
-  calendarDays: any[] = [];
-
-  // MONTH
   currentMonthOffset = 0;
+
+  calendarDays: any[] = [];
   monthDays: any[] = [];
 
-  // DAY
   selectedDay: any = null;
 
-  // APPOINTMENTS
   dayAppointments: DayAppointment[] = [];
   appointmentsByDay: { [key: string]: DayAppointment[] } = {};
 
@@ -56,11 +52,11 @@ export class PeluqueroComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private reservasApiService: ReservasApiService
+    private reservasApiService: ReservasApiService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-
     this.currentUser = {
       name: this.authService.getName(),
       surname: this.authService.getSurname()
@@ -70,22 +66,20 @@ export class PeluqueroComponent implements OnInit {
   }
 
   // =========================
-  // 🔥 VIEW SWITCH
+  // VIEW SWITCH
   // =========================
   setView(mode: 'day' | 'week' | 'month') {
     this.viewMode = mode;
 
     if (mode === 'month') {
       this.buildMonth();
-    }
-
-    if (mode === 'week' || mode === 'day') {
+    } else {
       this.updateCalendar();
     }
   }
 
   // =========================
-  // 🔥 WEEK CONTROL
+  // WEEK NAV
   // =========================
   setWeek(offset: number) {
     this.currentWeekOffset = offset;
@@ -97,18 +91,19 @@ export class PeluqueroComponent implements OnInit {
   goToday() { this.setWeek(0); }
 
   // =========================
-  // 🔥 MAIN WEEK BUILDER
+  // CALENDARIO SEMANA (FIX)
   // =========================
   updateCalendar() {
 
     const today = new Date();
     today.setDate(today.getDate() + this.currentWeekOffset * 7);
 
-    const week: any[] = [];
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
     const start = new Date(today);
     start.setDate(today.getDate() - today.getDay());
+
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    const week: any[] = [];
 
     for (let i = 0; i < 7; i++) {
 
@@ -124,20 +119,47 @@ export class PeluqueroComponent implements OnInit {
       });
     }
 
-    this.calendarDays = week;
+    this.calendarDays = [...week];
 
     if (!this.selectedDay) {
       this.selectedDay = this.calendarDays[0];
-    } else {
-      const match = this.calendarDays.find(d => d.iso === this.selectedDay.iso);
-      this.selectedDay = match || this.calendarDays[0];
     }
 
     this.loadAppointments();
   }
 
   // =========================
-  // 🔥 MONTH BUILDER (FIX REAL)
+  // DAY NAV (FIX)
+  // =========================
+  prevDay(): void {
+    const i = this.calendarDays.findIndex(d => d.iso === this.selectedDay?.iso);
+    if (i > 0) this.selectedDay = this.calendarDays[i - 1];
+  }
+
+  nextDay(): void {
+    const i = this.calendarDays.findIndex(d => d.iso === this.selectedDay?.iso);
+    if (i < this.calendarDays.length - 1) this.selectedDay = this.calendarDays[i + 1];
+  }
+
+  get calendarTitle(): string {
+
+  const base = new Date();
+
+  if (this.viewMode === 'month') {
+    base.setMonth(base.getMonth() + this.currentMonthOffset);
+  } else {
+    base.setDate(base.getDate() + this.currentWeekOffset * 7);
+  }
+
+  const months = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  return `${months[base.getMonth()]} ${base.getFullYear()}`;
+}
+  // =========================
+  // MES
   // =========================
   buildMonth() {
 
@@ -148,8 +170,7 @@ export class PeluqueroComponent implements OnInit {
     const month = today.getMonth();
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const weekDays = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
     const days: any[] = [];
 
@@ -165,14 +186,10 @@ export class PeluqueroComponent implements OnInit {
       });
     }
 
-    this.monthDays = days;
-
+    this.monthDays = [...days];
     this.loadAppointments();
   }
 
-  // =========================
-  // 🔥 MONTH NAV
-  // =========================
   nextMonth() {
     this.currentMonthOffset++;
     this.buildMonth();
@@ -184,16 +201,18 @@ export class PeluqueroComponent implements OnInit {
   }
 
   // =========================
-  // 🔥 APPOINTMENTS
+  // CITAS
   // =========================
   loadAppointments(): void {
 
-    const token = this.authService.getToken()!;
-    if (!this.calendarDays.length && !this.monthDays.length) return;
+    const token = this.authService.getToken();
+    if (!token) return;
 
     const source = this.viewMode === 'month'
       ? this.monthDays
       : this.calendarDays;
+
+    if (!source.length) return;
 
     const start = source[0].iso;
     const end = source[source.length - 1].iso;
@@ -209,49 +228,58 @@ export class PeluqueroComponent implements OnInit {
         }));
 
         this.groupAppointments();
+
+  
+        this.cdr.detectChanges();
       });
   }
 
+  // =========================
+  // GROUP (FIX INMUTABLE)
+  // =========================
   groupAppointments() {
 
-    this.appointmentsByDay = {};
+    const grouped: { [key: string]: DayAppointment[] } = {};
 
-    for (let appt of this.dayAppointments) {
+    for (const appt of this.dayAppointments) {
 
-      if (!this.appointmentsByDay[appt.appointmentDate]) {
-        this.appointmentsByDay[appt.appointmentDate] = [];
-      }
+      const key = appt.appointmentDate;
 
-      this.appointmentsByDay[appt.appointmentDate].push(appt);
+      if (!grouped[key]) grouped[key] = [];
+
+      grouped[key].push({ ...appt });
     }
+
+    this.appointmentsByDay = { ...grouped };
   }
 
   // =========================
-  // 🔥 DAY NAV
+  // CANCEL (FIX INSTANTE)
   // =========================
-  nextDay() {
-    const idx = this.calendarDays.indexOf(this.selectedDay);
-    if (idx < this.calendarDays.length - 1) {
-      this.selectedDay = this.calendarDays[idx + 1];
-    }
+  cancelAppointment(id: number) {
+
+    const token = this.authService.getToken();
+    if (!token) return;
+
+    if (!confirm('¿Cancelar cita?')) return;
+
+    this.reservasApiService.deleteAppointment(id, token).subscribe(() => {
+
+      this.dayAppointments = this.dayAppointments.filter(a => a.id !== id);
+
+      this.groupAppointments();
+
+      // 🔥 FORZAR UPDATE INSTANTE
+      this.cdr.detectChanges();
+    });
   }
 
-  prevDay() {
-    const idx = this.calendarDays.indexOf(this.selectedDay);
-    if (idx > 0) {
-      this.selectedDay = this.calendarDays[idx - 1];
-    }
-  }
-
-  // =========================
-  // 🔥 HELPERS
-  // =========================
+ 
   normalizeDate(date: string): string {
     return date ? date.split('T')[0] : '';
   }
 
   getAppointmentsAt(day: any, time: string) {
-    if (!day) return [];
     return (this.appointmentsByDay[day.iso] || []).filter(a => a.time === time);
   }
 
@@ -259,9 +287,7 @@ export class PeluqueroComponent implements OnInit {
     return this.appointmentsByDay[day.iso] || [];
   }
 
-  // =========================
-  // 🔥 UI
-  // =========================
+ 
   get kpis() {
     return [
       { title: 'Citas', value: this.dayAppointments.length, hint: 'Semana' },
@@ -273,8 +299,6 @@ export class PeluqueroComponent implements OnInit {
   get nextAppointment() {
     return this.dayAppointments[0] || null;
   }
-
-  openBookingModal() {}
 
   logout() {
     this.authService.logout();

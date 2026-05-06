@@ -1,4 +1,3 @@
-
 <section class="agenda-page">
   <div class="agenda-shell">
 
@@ -44,9 +43,8 @@
       <!-- HEADER -->
       <header class="agenda-header">
 
-        <h2>Agenda</h2>
+        <h2>Agenda · {{ calendarTitle }}</h2>
 
-        <!-- VISTAS -->
         <div class="view-switch">
 
           <button class="view-btn"
@@ -69,7 +67,6 @@
 
         </div>
 
-        <!-- NAV SEMANA -->
         <div class="calendar-nav">
           <button (click)="prevWeek()">⬅</button>
           <button (click)="goToday()">Hoy</button>
@@ -87,52 +84,49 @@
         </article>
       </section>
 
-      <!-- =========================
-           VISTAS
-      ========================== -->
+      <!-- VISTAS -->
       <section [ngSwitch]="viewMode">
 
         <!-- =========================
-             DÍA (FIX NG5002 APLICADO)
+             DÍA (FIX DEFINITIVO)
         ========================== -->
+        <section *ngSwitchCase="'day'" class="calendar-grid">
 
-        <ng-container *ngIf="selectedDay">
+          <div class="time-head"></div>
 
-          <section *ngSwitchCase="'day'" class="calendar-grid">
+          <!-- 🔥 FIX: siempre renderizar safe -->
+          <div class="day-head">
+            {{ selectedDay?.name || 'Día' }}
+            <span>{{ selectedDay?.date || '' }}</span>
+          </div>
 
-            <div class="time-head"></div>
+          <div class="day-nav">
+            <button (click)="prevDay()">⬅ Día</button>
+            <button (click)="nextDay()">Día ➡</button>
+          </div>
 
-            <div class="day-head">
-              {{ selectedDay.name }}
-              <span>{{ selectedDay.date }}</span>
+          <ng-container *ngFor="let time of timeSlots">
+
+            <div class="time-cell">
+              {{ time }}
             </div>
 
-            <!-- navegación día -->
-            <div class="day-nav">
-              <button (click)="prevDay()">⬅ Día</button>
-              <button (click)="nextDay()">Día ➡</button>
+            <div class="slot-cell">
+
+              <div class="event-chip"
+                   *ngFor="let appt of getAppointmentsAt(selectedDay, time)"
+                   (click)="cancelAppointment(appt.id)"
+                   title="Click para cancelar">
+
+                {{ appt.name }}
+
+              </div>
+
             </div>
 
-            <ng-container *ngFor="let time of timeSlots">
+          </ng-container>
 
-              <div class="time-cell">
-                {{ time }}
-              </div>
-
-              <div class="slot-cell">
-
-                <div class="event-chip"
-                     *ngFor="let appt of getAppointmentsAt(selectedDay, time)">
-                  {{ appt.name }}
-                </div>
-
-              </div>
-
-            </ng-container>
-
-          </section>
-
-        </ng-container>
+        </section>
 
         <!-- =========================
              SEMANA
@@ -160,8 +154,11 @@
                  *ngFor="let day of calendarDays">
 
               <div class="event-chip"
-                   *ngFor="let appt of getAppointmentsAt(day, time)">
+                   *ngFor="let appt of getAppointmentsAt(day, time)"
+                   (click)="cancelAppointment(appt.id)">
+
                 {{ appt.name }}
+
               </div>
 
             </div>
@@ -190,8 +187,11 @@
             <div class="month-events">
 
               <div class="event-chip"
-                   *ngFor="let appt of getAppointmentsByDay(day)">
+                   *ngFor="let appt of getAppointmentsByDay(day)"
+                   (click)="cancelAppointment(appt.id)">
+
                 {{ appt.name }}
+
               </div>
 
             </div>

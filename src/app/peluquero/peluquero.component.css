@@ -927,3 +927,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.event-chip:hover {
+  background-color: #e74c3c; /* rojo */
+  color: white;
+  cursor: pointer;
+  transform: scale(1.03);
+  transition: all 0.15s ease-in-out;
+}
