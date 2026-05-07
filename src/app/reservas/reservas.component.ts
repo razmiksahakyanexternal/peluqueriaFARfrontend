@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AppointmentsLocalService } from '../appointments-local.service';
-import { ReservasApiService, CreateAppointmentRequest } from '../reservas-api.service';
+import { ReservasApiService, CreateAppointmentRequest, DayOfWeek } from '../reservas-api.service';
 import { AuthService } from '../auth.service';
 
 @Component({
@@ -17,6 +17,7 @@ export class ReservasComponent implements OnInit {
   currentDate = new Date();
   selectedDate: Date | null = null;
   selectedTime: string | null = null;
+  workingDays = new Set<DayOfWeek>();
   citaConfirmada = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
@@ -48,6 +49,7 @@ export class ReservasComponent implements OnInit {
     }
 
     this.initializeDefaultDate();
+    this.loadWorkingDays();
     this.loadOccupiedHours();
   }
 
@@ -72,8 +74,7 @@ export class ReservasComponent implements OnInit {
   isWeekday(day: number | null): boolean {
     if (!day) return false;
     const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
-    const dayOfWeek = date.getDay();
-    return dayOfWeek >= 1 && dayOfWeek <= 5;
+    return this.isWorkingDate(date);
   }
 
   isFutureDate(day: number | null): boolean {
@@ -86,12 +87,10 @@ export class ReservasComponent implements OnInit {
   }
 
   selectDate(day: number | null): void {
-    if (day && this.isWeekday(day) && this.isFutureDate(day)) {
-      this.selectedDate = new Date(
-        this.currentDate.getFullYear(),
-        this.currentDate.getMonth(),
-        day
-      );
+    if (!day) return;
+    const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+    if (this.isWorkingDate(date) && this.isFutureDate(day)) {
+      this.selectedDate = date;
       this.selectedTime = null;
       this.loadOccupiedHours();
     }
@@ -248,5 +247,34 @@ export class ReservasComponent implements OnInit {
 
   private normalizeTimeToHourMinute(time: string): string {
     return time.length >= 5 ? time.substring(0, 5) : time;
+  }
+
+  private loadWorkingDays(): void {
+    const token = this.authService.getToken();
+    if (!token) {
+      this.workingDays = new Set<DayOfWeek>();
+      return;
+    }
+
+    this.reservasApiService.getWorkingDays(token).subscribe({
+      next: (resp) => {
+        this.workingDays = new Set(resp.workingDays ?? []);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.workingDays = new Set<DayOfWeek>();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private isWorkingDate(date: Date): boolean {
+    if (this.workingDays.size === 0) {
+      const dow = date.getDay();
+      return dow >= 1 && dow <= 5;
+    }
+
+    const map: DayOfWeek[] = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    return this.workingDays.has(map[date.getDay()]);
   }
 }

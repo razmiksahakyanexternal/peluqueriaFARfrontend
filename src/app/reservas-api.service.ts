@@ -48,6 +48,19 @@ export interface BlockedSlotItem {
 	startTime?: string | null;
 	endTime?: string | null;
 }
+
+export type DayOfWeek =
+	| 'MONDAY'
+	| 'TUESDAY'
+	| 'WEDNESDAY'
+	| 'THURSDAY'
+	| 'FRIDAY'
+	| 'SATURDAY'
+	| 'SUNDAY';
+
+export interface WorkingDaysResponse {
+	workingDays: DayOfWeek[];
+}
 @Injectable({
 	providedIn: 'root'
 })
@@ -55,6 +68,7 @@ export class ReservasApiService {
 	private readonly baseUrl = 'http://localhost:8081/appointments';
 	private readonly usersUrl = 'http://localhost:8081/users';
 	private readonly blockedSlotsUrl = 'http://localhost:8081/barber/blocked-slots';
+	private readonly workingDaysUrl = 'http://localhost:8081/barber/working-days';
 
 	constructor(private http: HttpClient) {}
 
@@ -128,6 +142,20 @@ export class ReservasApiService {
 			headers,
 			params: { start, end },
 		});
+	}
+
+	getWorkingDays(token: string): Observable<WorkingDaysResponse> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<WorkingDaysResponse>(this.workingDaysUrl, { headers });
+	}
+
+	setWorkingDays(workingDays: DayOfWeek[], token: string): Observable<WorkingDaysResponse> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.put<WorkingDaysResponse>(this.workingDaysUrl, { workingDays }, { headers });
 	}
 }
 

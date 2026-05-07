@@ -104,7 +104,7 @@
               <div class="time-cell">{{ slot }}</div>
 
               <ng-container *ngFor="let day of weekDays; trackBy: trackByDay">
-                <div class="slot-cell" [class.blocked]="isSlotBlocked(day.iso, slot)"></div>
+                <div class="slot-cell" [class.blocked]="isSlotBlocked(day.iso, slot)" [class.nonworking]="isNonWorkingDate(day.iso)"></div>
               </ng-container>
             </ng-container>
 
@@ -154,6 +154,8 @@
             <div class="legend-item"><span class="dot libre"></span><span>Dia Libre</span></div>
             <div class="legend-item"><span class="dot cerrado"></span><span>Cerrado</span></div>
             <button type="button" class="block-btn" (click)="openBlockModal()">+ Bloquear Hora</button>
+            <button type="button" class="block-btn" (click)="openWorkingDaysModal()">{{ workingDays.size > 0 ? 'Editar días' : 'Configurar días' }}</button>
+            <p *ngIf="workingDays.size > 0" class="working-days-summary">Días configurados: {{ workingDaysText }}</p>
           </article>
         </div>
       </section>
@@ -271,6 +273,36 @@
           </div>
         </div>
       </section>
+    </div>
+  </div>
+
+  <!-- Working Days Modal -->
+  <div class="modal-overlay" *ngIf="showWorkingDaysModal" (click)="closeWorkingDaysModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ workingDays.size > 0 ? 'Editar días laborables' : 'Configurar días laborables' }}</h2>
+        <button type="button" class="close-btn" (click)="closeWorkingDaysModal()">×</button>
+      </header>
+
+      <form class="booking-form" (ngSubmit)="saveWorkingDays()">
+        <div class="feedback success" *ngIf="workingDaysSuccess">{{ workingDaysSuccess }}</div>
+        <div class="feedback error" *ngIf="workingDaysError">{{ workingDaysError }}</div>
+
+        <div class="form-group">
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('MONDAY')" (change)="toggleWorkingDay('MONDAY', $any($event.target).checked)"> Lunes</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('TUESDAY')" (change)="toggleWorkingDay('TUESDAY', $any($event.target).checked)"> Martes</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('WEDNESDAY')" (change)="toggleWorkingDay('WEDNESDAY', $any($event.target).checked)"> Miércoles</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('THURSDAY')" (change)="toggleWorkingDay('THURSDAY', $any($event.target).checked)"> Jueves</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('FRIDAY')" (change)="toggleWorkingDay('FRIDAY', $any($event.target).checked)"> Viernes</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('SATURDAY')" (change)="toggleWorkingDay('SATURDAY', $any($event.target).checked)"> Sábado</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('SUNDAY')" (change)="toggleWorkingDay('SUNDAY', $any($event.target).checked)"> Domingo</label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeWorkingDaysModal()">Cancelar</button>
+          <button type="submit" class="confirm-btn" [disabled]="isSavingWorkingDays">{{ workingDays.size > 0 ? 'Actualizar' : 'Guardar' }}</button>
+        </div>
+      </form>
     </div>
   </div>
 </section>

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth.service';
-import { ReservasApiService, AppointmentItem, UserItem, BlockedSlotItem, CreateBlockedSlotRequest } from '../reservas-api.service';
+import { ReservasApiService, AppointmentItem, UserItem, BlockedSlotItem, CreateBlockedSlotRequest, DayOfWeek } from '../reservas-api.service';
 
 interface AgendaNavItem {
   label: string;
@@ -62,6 +62,7 @@ export class PeluqueroComponent implements OnInit {
   users: UserItem[] = [];
   showBookingModal = false;
   showBlockModal = false;
+  showWorkingDaysModal = false;
 
   // Booking form
   bookingDate = '';
@@ -80,6 +81,28 @@ export class PeluqueroComponent implements OnInit {
   blockErrorMessage: string | null = null;
   isBlocking = false;
   isDeletingBlockId: number | null = null;
+
+  // Working days config
+  workingDays = new Set<DayOfWeek>();
+  workingDaysDraft = new Set<DayOfWeek>();
+  workingDaysError: string | null = null;
+  workingDaysSuccess: string | null = null;
+  isSavingWorkingDays = false;
+
+  get workingDaysText(): string {
+    if (this.workingDays.size === 0) return '';
+    const days = Array.from(this.workingDays);
+    const names: Record<DayOfWeek, string> = {
+      MONDAY: 'Lunes',
+      TUESDAY: 'Martes',
+      WEDNESDAY: 'Miércoles',
+      THURSDAY: 'Jueves',
+      FRIDAY: 'Viernes',
+      SATURDAY: 'Sábado',
+      SUNDAY: 'Domingo'
+    };
+    return days.map(d => names[d]).join(', ');
+  }
 
   weekDays: WeekDay[] = [];
   timeSlots: string[] = [
@@ -129,6 +152,7 @@ export class PeluqueroComponent implements OnInit {
     this.loadAppointments();
     this.loadBlockedSlots();
     this.loadUsers();
+    this.loadWorkingDays();
   }
 
   private buildWeekDays(): void {
@@ -292,6 +316,26 @@ export class PeluqueroComponent implements OnInit {
     this.guestPhone = '';
   }
 
+  private loadWorkingDays(): void {
+    const token = this.authService.getToken();
+    if (!token) {
+      this.workingDays = new Set<DayOfWeek>();
+      return;
+    }
+
+    this.reservasApiService.getWorkingDays(token).subscribe({
+      next: (resp) => {
+        this.workingDays = new Set(resp.workingDays ?? []);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Si no hay configuración aún, dejamos vacío y el peluquero lo configura.
+        this.workingDays = new Set<DayOfWeek>();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   openBlockModal(): void {
     this.showBlockModal = true;
     this.blockDate = this.toIsoDate(this.selectedDate);
@@ -303,6 +347,65 @@ export class PeluqueroComponent implements OnInit {
     this.blockErrorMessage = null;
     this.isBlocking = false;
     this.isDeletingBlockId = null;
+  }
+
+  openWorkingDaysModal(): void {
+    this.showWorkingDaysModal = true;
+    this.workingDaysError = null;
+    this.workingDaysSuccess = null;
+    this.workingDaysDraft = new Set(this.workingDays);
+  }
+
+  closeWorkingDaysModal(): void {
+    this.showWorkingDaysModal = false;
+  }
+
+  toggleWorkingDay(day: DayOfWeek, checked: boolean): void {
+    if (checked) this.workingDaysDraft.add(day);
+    else this.workingDaysDraft.delete(day);
+  }
+
+  saveWorkingDays(): void {
+    if (this.isSavingWorkingDays) return;
+
+    const token = this.authService.getToken();
+    if (!token) {
+      this.workingDaysError = 'No autenticado';
+      return;
+    }
+
+    const days = Array.from(this.workingDaysDraft);
+    if (days.length === 0) {
+      this.workingDaysError = 'Debes seleccionar al menos un día laborable';
+      return;
+    }
+
+    this.isSavingWorkingDays = true;
+    this.workingDaysError = null;
+    this.workingDaysSuccess = null;
+
+    this.reservasApiService.setWorkingDays(days, token).subscribe({
+      next: (resp) => {
+        this.workingDays = new Set(resp.workingDays ?? days);
+        this.workingDaysDraft = new Set(this.workingDays);
+        this.workingDaysSuccess = this.workingDays.size > 0 ? 'Días laborables actualizados' : 'Días laborables guardados';
+        this.isSavingWorkingDays = false;
+        this.cdr.detectChanges();
+        setTimeout(() => this.closeWorkingDaysModal(), 700);
+      },
+      error: (err) => {
+        this.workingDaysError = err?.error?.message || 'Error guardando días laborables';
+        this.isSavingWorkingDays = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  isNonWorkingDate(isoDate: string): boolean {
+    if (this.workingDays.size === 0) return false;
+    const dow = new Date(isoDate + 'T00:00:00').getDay(); // 0 Sun
+    const map: DayOfWeek[] = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    return !this.workingDays.has(map[dow]);
   }
 
   closeBlockModal(): void {

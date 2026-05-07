@@ -368,6 +368,8 @@
 	border-color: #f1b2b2;
 }
 
+.slot-cell.nonworking { background:#f1f4f7; }
+
 .event-chip {
 	display: flex;
 	align-items: center;
@@ -588,9 +590,8 @@
 .feedback.success { background: #e6f6ee; border: 1px solid #9dd7b8; color: #155c37; }
 .feedback.error { background: #fff1f1; border: 1px solid #e3a2a2; color: #7a1f1f; }
 
-.blocked-list h3 { margin: 0; text-align: center; }
+.blocked-list h3{margin:0;text-align:center}
 .blocked-row { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.7rem; border: 1px solid #e7edf3; }
-.blocked-row__actions { display: flex; }
 
 .form-group {
 	display: flex;
@@ -654,3 +655,5 @@
 .confirm-btn:hover {
 	background: #1a2530;
 }
+. w o r k i n g - d a y s - s u m m a r y   {   f o n t - s i z e :   0 . 8 5 r e m ;   c o l o r :   # 6 6 6 ;   m a r g i n :   0 . 5 r e m   0   0 ;   }  
+ 
