@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth.service';
-import { ReservasApiService, AppointmentItem } from '../reservas-api.service';
+import { ReservasApiService, AppointmentItem, UserItem } from '../reservas-api.service';
 
 interface AgendaNavItem {
   label: string;
@@ -43,7 +45,8 @@ interface MonthDay {
   selector: 'app-peluquero',
   templateUrl: './peluquero.component.html',
   styleUrl: './peluquero.component.css',
-  standalone: false
+  standalone: true,
+  imports: [FormsModule, CommonModule]
 })
 export class PeluqueroComponent implements OnInit {
   constructor(
@@ -55,6 +58,33 @@ export class PeluqueroComponent implements OnInit {
   viewMode: 'day' | 'week' | 'month' = 'week';
   selectedDate = new Date();
   appointments: AppointmentItem[] = [];
+  users: UserItem[] = [];
+  showBookingModal = false;
+  showBookingOptions = false;
+  clientType: 'registered' | 'unregistered' | null = null;
+
+  // Reserva
+  bookingDate = '';
+  bookingTime = '';
+  selectedUserId: number | null = null;
+  selectedUser: UserItem | null = null;
+  guestName = '';
+  guestPhone = '';
+
+  // Busqueda con autocompletado
+  userSearchQuery = '';
+  userSuggestions: UserItem[] = [];
+  showUserSuggestions = false;
+
+  // Validacion
+  submitted = false;
+  dateError = '';
+  timeError = '';
+  guestNameError = '';
+
+  get todayIso(): string {
+    return this.toIsoDate(new Date());
+  }
 
   readonly navItems: AgendaNavItem[] = [
     { label: 'Agenda', active: true },
@@ -69,20 +99,26 @@ export class PeluqueroComponent implements OnInit {
     { title: 'Citas Este Mes', value: '0', hint: 'Vista mensual' }
   ];
 
-  readonly timeSlots: string[] = [
-    '09:00',
-    '09:15',
-    '09:30',
-    '09:45',
-    '10:00',
-    '10:15',
-    '10:30',
-    '10:45',
-    '11:00',
-    '11:15',
-    '11:30',
-    '11:45'
+  readonly allTimeSlots: string[] = [
+    '10:00', '10:15', '10:30', '10:45',
+    '11:00', '11:15', '11:30', '11:45',
+    '12:00', '12:15', '12:30', '12:45',
+    '13:00', '13:15', '13:30', '13:45',
+    '14:00', '14:15', '14:30', '14:45',
+    '15:00', '15:15', '15:30', '15:45',
+    '16:00', '16:15', '16:30', '16:45',
+    '17:00', '17:15', '17:30', '17:45'
   ];
+
+  get timeSlots(): string[] {
+    if (!this.bookingDate) {
+      return this.allTimeSlots;
+    }
+    const occupiedSlots = this.appointments
+      .filter(apt => apt.appointmentDate === this.bookingDate)
+      .map(apt => apt.startTime.substring(0, 5));
+    return this.allTimeSlots.filter(slot => !occupiedSlots.includes(slot));
+  }
 
   weekDays: WeekDay[] = [];
 
@@ -95,6 +131,7 @@ export class PeluqueroComponent implements OnInit {
   ngOnInit(): void {
     this.buildWeekDays();
     this.loadAppointments();
+    this.loadUsers();
   }
 
   changeView(mode: 'day' | 'week' | 'month'): void {
@@ -166,10 +203,9 @@ export class PeluqueroComponent implements OnInit {
     if (this.viewMode === 'month') {
       return [];
     }
-
     return this.appointmentsThisWeek.map((appointment) => {
       const dayIndex = this.weekDays.findIndex((day) => day.iso === appointment.appointmentDate);
-      const startIndex = this.timeSlots.indexOf(appointment.startTime);
+      const startIndex = this.allTimeSlots.indexOf(appointment.startTime);
       return {
         day: dayIndex >= 0 ? dayIndex : 0,
         start: startIndex >= 0 ? startIndex + 1 : 1,
@@ -182,7 +218,7 @@ export class PeluqueroComponent implements OnInit {
 
   get dayCalendarEvents(): CalendarEvent[] {
     return this.appointmentsThisDay.map((appointment) => {
-      const startIndex = this.timeSlots.indexOf(appointment.startTime);
+      const startIndex = this.allTimeSlots.indexOf(appointment.startTime);
       return {
         day: 0,
         start: startIndex >= 0 ? startIndex + 1 : 1,
@@ -205,7 +241,7 @@ export class PeluqueroComponent implements OnInit {
     const today = new Date();
     const selectedIso = this.toIsoDate(this.selectedDate);
 
-    for (let i = 0; i < 42; i++) { // 6 weeks * 7 days
+    for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
 
@@ -284,14 +320,195 @@ export class PeluqueroComponent implements OnInit {
 
     const [start, end] = this.getRangeDates();
     this.reservasApiService.getAppointmentsInRange(start, end, token).subscribe({
-      next: (appointments) => {
+      next: (appointments: AppointmentItem[]) => {
         this.appointments = appointments;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al cargar citas:', error);
         this.appointments = [];
       }
     });
+  }
+
+  private loadUsers(): void {
+    const token = this.authService.getToken();
+    if (!token) {
+      this.users = [];
+      return;
+    }
+
+    this.reservasApiService.getUsers(token).subscribe({
+      next: (users: UserItem[]) => {
+        this.users = users;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar usuarios:', error);
+        this.users = [];
+      }
+    });
+  }
+
+  openRegisteredBooking(): void {
+    this.clientType = 'registered';
+    this.showBookingOptions = false;
+    this.showBookingModal = true;
+  }
+
+  openUnregisteredBooking(): void {
+    this.clientType = 'unregistered';
+    this.showBookingOptions = false;
+    this.showBookingModal = true;
+  }
+
+  openBookingModal(): void {
+    this.showBookingOptions = true;
+    this.showBookingModal = false;
+
+    // reset básico
+    this.bookingDate = this.toIsoDate(this.selectedDate);
+    this.bookingTime = '';
+    this.selectedUserId = null;
+    this.selectedUser = null;
+    this.guestName = '';
+    this.guestPhone = '';
+
+    this.userSearchQuery = '';
+    this.userSuggestions = [];
+    this.showUserSuggestions = false;
+  }
+
+  closeBookingModal(): void {
+    this.showBookingModal = false;
+  }
+
+  bookAppointment(): void {
+    this.submitted = true;
+    this.dateError = '';
+    this.timeError = '';
+    this.guestNameError = '';
+
+    let hasError = false;
+
+    if (!this.bookingDate) {
+      this.dateError = 'La fecha es obligatoria';
+      hasError = true;
+    } else if (this.bookingDate < this.todayIso) {
+      this.dateError = 'No se puede seleccionar una fecha anterior a hoy';
+      hasError = true;
+    }
+
+    if (!this.bookingTime) {
+      this.timeError = 'La hora es obligatoria';
+      hasError = true;
+    }
+
+    const userIdValue = this.selectedUserId;
+    if (this.clientType === 'registered' && !this.selectedUserId) {
+      this.guestNameError = 'Debes seleccionar un cliente registrado';
+      hasError = true;
+    }
+
+    if (this.clientType === 'unregistered' && !this.guestName) {
+      this.guestNameError = 'Debes introducir el nombre del cliente';
+      hasError = true;
+    }
+
+    if (hasError) {
+      return;
+    }
+
+    const token = this.authService.getToken();
+    if (!token) {
+      alert('No autenticado');
+      return;
+    }
+
+    const request = {
+      appointmentDate: this.bookingDate,
+      startTime: this.bookingTime + ':00',
+      guestName: this.guestName,
+      guestPhone: this.guestPhone,
+      userId: this.selectedUserId
+    };
+
+    this.reservasApiService.createAppointment(request, token).subscribe({
+      next: (response) => {
+        this.closeBookingModal();
+        this.loadAppointments();
+      },
+      error: (error) => {
+        console.error('Error al reservar cita:', error);
+      }
+    });
+  }
+
+  onUserSelect(userId: string): void {
+    this.selectedUserId = userId ? parseInt(userId) : null;
+    if (this.selectedUserId) {
+      const user = this.users.find(u => u.id === this.selectedUserId);
+      if (user) {
+        this.selectedUser = user;
+        this.guestName = `${user.name} ${user.surname}`;
+        this.guestPhone = '';
+      }
+    } else {
+      this.selectedUser = null;
+      this.guestName = '';
+      this.guestPhone = '';
+    }
+  }
+
+  onUserSearch(event: Event): void {
+    const query = (event.target as HTMLInputElement).value.toLowerCase();
+    this.userSearchQuery = query;
+    if (query) {
+      const token = this.authService.getToken();
+      if (token) {
+        this.reservasApiService.searchUsers(query, token).subscribe({
+          next: (users: UserItem[]) => {
+            this.userSuggestions = users;
+            this.showUserSuggestions = users.length > 0;
+          },
+          error: () => {
+            this.userSuggestions = [];
+            this.showUserSuggestions = false;
+          }
+        });
+      }
+    } else {
+      this.userSuggestions = [];
+      this.showUserSuggestions = false;
+    }
+  }
+
+  selectUser(user: UserItem): void {
+    this.selectedUserId = user.id;
+    this.selectedUser = user;
+    this.userSearchQuery = user.email;
+    this.guestName = `${user.name} ${user.surname}`;
+    this.guestPhone = '';
+    this.showUserSuggestions = false;
+  }
+
+  clearUser(): void {
+    this.selectedUserId = null;
+    this.selectedUser = null;
+    this.userSearchQuery = '';
+    this.guestName = '';
+    this.guestPhone = '';
+    this.showUserSuggestions = false;
+  }
+
+  onBlurUser(): void {
+    setTimeout(() => {
+      this.showUserSuggestions = false;
+    }, 200);
+  }
+
+  onFocusUser(): void {
+    if (this.userSearchQuery) {
+      this.onUserSearch({ target: { value: this.userSearchQuery } } as any);
+    }
   }
 
   private getRangeDates(): [string, string] {
