@@ -202,6 +202,9 @@
           <input type="tel" id="guestPhone" [(ngModel)]="guestPhone" name="guestPhone">
         </div>
 
+        <div class="feedback error" *ngIf="bookingErrorMessage">{{ bookingErrorMessage }}</div>
+        <div class="feedback success" *ngIf="bookingSuccessMessage">{{ bookingSuccessMessage }}</div>
+
         <div class="form-actions">
           <button type="button" class="cancel-btn" (click)="closeBookingModal()">Cancelar</button>
           <button type="submit" class="confirm-btn">Confirmar Reserva</button>

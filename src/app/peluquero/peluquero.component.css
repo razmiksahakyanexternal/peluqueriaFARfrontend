@@ -1,4 +1,4 @@
-:host {
+﻿:host {
 	display: block;
 }
 
@@ -655,5 +655,10 @@
 .confirm-btn:hover {
 	background: #1a2530;
 }
-. w o r k i n g - d a y s - s u m m a r y   {   f o n t - s i z e :   0 . 8 5 r e m ;   c o l o r :   # 6 6 6 ;   m a r g i n :   0 . 5 r e m   0   0 ;   }  
- 
+
+.working-days-summary {
+font-size: 0.85rem;
+color: #666;
+margin: 0.5rem 0 0;
+}
+

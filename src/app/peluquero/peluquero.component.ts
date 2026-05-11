@@ -70,6 +70,8 @@ export class PeluqueroComponent implements OnInit {
   selectedUserId: number | null = null;
   guestName = '';
   guestPhone = '';
+  bookingErrorMessage: string | null = null;
+  bookingSuccessMessage: string | null = null;
 
   // Block form
   blockDate = '';
@@ -314,6 +316,8 @@ export class PeluqueroComponent implements OnInit {
     this.selectedUserId = null;
     this.guestName = '';
     this.guestPhone = '';
+    this.bookingErrorMessage = null;
+    this.bookingSuccessMessage = null;
   }
 
   private loadWorkingDays(): void {
@@ -586,14 +590,22 @@ export class PeluqueroComponent implements OnInit {
   }
 
   bookAppointment(): void {
+    this.bookingErrorMessage = null;
+    this.bookingSuccessMessage = null;
+
     if (!this.bookingDate || !this.bookingTime) {
-      alert('Selecciona fecha y hora');
+      this.bookingErrorMessage = 'Selecciona fecha y hora';
+      return;
+    }
+
+    if (this.workingDays.size > 0 && this.isNonWorkingDate(this.bookingDate)) {
+      this.bookingErrorMessage = 'No se puede reservar ese día porque está marcado como no laboral';
       return;
     }
 
     const token = this.authService.getToken();
     if (!token) {
-      alert('No autenticado');
+      this.bookingErrorMessage = 'No autenticado';
       return;
     }
 
@@ -606,14 +618,15 @@ export class PeluqueroComponent implements OnInit {
     };
 
     this.reservasApiService.createAppointment(request, token).subscribe({
-      next: (response) => {
-        alert('Cita reservada correctamente');
-        this.closeBookingModal();
+      next: () => {
+        this.bookingSuccessMessage = 'Cita reservada correctamente';
+        this.bookingErrorMessage = null;
         this.loadAppointments(); // Reload appointments
+        setTimeout(() => this.closeBookingModal(), 700);
       },
       error: (error) => {
         console.error('Error al reservar cita:', error);
-        alert('Error al reservar cita: ' + (error.error?.message || 'Error desconocido'));
+        this.bookingErrorMessage = error.error?.message || 'Error al reservar cita. Verifica la fecha y vuelve a intentar.';
       }
     });
   }
