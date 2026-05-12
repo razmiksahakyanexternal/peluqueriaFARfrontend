@@ -1,0 +1,76 @@
+:host {
+  display: block;
+}
+
+.mis-citas-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f5f7f9 0%, #e9edf1 100%);
+}
+
+.mis-citas-card {
+  width: 100%;
+  max-width: 540px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.mis-citas-header {
+  position: relative;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e6ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mis-citas-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #26313f;
+}
+
+.close-btn {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: #999;
+  cursor: pointer;
+}
+
+.mis-citas-content {
+  padding: 1.5rem;
+}
+
+.appointment-item {
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  background: #f8fafc;
+}
+
+.appointment-item + .appointment-item {
+  margin-top: 0.8rem;
+}
+
+.appointment-item h3 {
+  margin: 0;
+  color: #26313f;
+  font-size: 1rem;
+}
+
+.appointment-item p,
+.empty-copy {
+  margin: 0.35rem 0 0;
+  color: #627184;
+}
