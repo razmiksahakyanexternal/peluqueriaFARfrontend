@@ -1,61 +1,130 @@
 <section class="agenda-page">
+
   <div class="agenda-shell">
+
+    <!-- SIDEBAR -->
     <aside class="agenda-sidebar">
+
       <div class="sidebar-top">
+
         <div class="brand-row">
+
           <div class="brand-icon">✂</div>
+
           <div>
-            <h1>Peluqueria</h1>
+            <h1>Peluquería</h1>
             <p>Panel del Peluquero</p>
           </div>
+
         </div>
 
         <div class="sidebar-card profile-card">
+
           <span class="eyebrow">Profesional</span>
-          <h2>Luis Martinez</h2>
-          <p>Especialista en corte, color y styling.</p>
+
+          <h2>
+            {{ currentUser?.name }}
+            {{ currentUser?.surname }}
+          </h2>
+
         </div>
 
         <div class="sidebar-card next-card" *ngIf="nextAppointment; else noNextAppointment">
           <span class="eyebrow">Proxima cita</span>
-          <strong>{{ nextAppointment.startTime }}</strong>
-          <p>{{ nextAppointment.guestName }}</p>
+          <strong>{{ nextAppointment.time }}</strong>
+          <p>{{ nextAppointment.name }}</p>
           <small>{{ formattedToday }}</small>
         </div>
 
-        <ng-template #noNextAppointment>
+        <ng-template #noNext>
+
           <div class="sidebar-card next-card is-empty">
-            <span class="eyebrow">Proxima cita</span>
+
+            <span class="eyebrow">Próxima cita</span>
+
             <strong>Sin reservas</strong>
-            <p>No hay clientes pendientes para hoy.</p>
+
           </div>
+
         </ng-template>
 
-        <nav class="menu-list">
-          <a *ngFor="let item of navItems; trackBy: trackByLabel" href="#" class="menu-item" [class.active]="item.active">
-            {{ item.label }}
-          </a>
-        </nav>
       </div>
 
-      <button type="button" class="logout-btn" (click)="logout()">Cerrar Sesion</button>
+      <button
+        class="logout-btn"
+        (click)="logout()"
+      >
+        Cerrar Sesión
+      </button>
+
     </aside>
 
+    <!-- MAIN -->
     <main class="agenda-main">
+
+      <!-- HEADER -->
       <header class="agenda-header">
-        <div class="title-box">
-          <button type="button" class="hamburger-btn">☰</button>
-          <div>
-            <span class="eyebrow">Agenda diaria</span>
-            <h2>Control de citas</h2>
-          </div>
+
+        <h2>
+          Agenda · {{ calendarTitle }}
+        </h2>
+
+        <!-- VIEW SWITCH -->
+        <div class="view-switch">
+
+          <button
+            class="view-btn"
+            [class.active]="viewMode === 'day'"
+            (click)="setView('day')"
+          >
+            Día
+          </button>
+
+          <button
+            class="view-btn"
+            [class.active]="viewMode === 'week'"
+            (click)="setView('week')"
+          >
+            Semana
+          </button>
+
+          <button
+            class="view-btn"
+            [class.active]="viewMode === 'month'"
+            (click)="setView('month')"
+          >
+            Mes
+          </button>
+
         </div>
 
-        <div class="user-box">
-          <strong>Luis Martinez</strong>
-          <span>Peluquero</span>
+        <!-- NAV -->
+        <div class="calendar-nav">
+
+          <button
+            (click)="viewMode === 'month'
+              ? prevMonth()
+              : prevWeek()"
+          >
+            ⬅
+          </button>
+
+          <button (click)="goToday()">
+            Hoy
+          </button>
+
+          <button
+            (click)="viewMode === 'month'
+              ? nextMonth()
+              : nextWeek()"
+          >
+            ➡
+          </button>
+
         </div>
+
       </header>
+
 
       <section class="toolbar-row">
         <div class="toolbar-left">
@@ -72,17 +141,27 @@
             <button type="button" class="toggle-btn" [class.active]="viewMode === 'month'" (click)="changeView('month')">Mes</button>
           </div>
 
-          <button type="button" class="add-btn">+ Anadir Cita ▾</button>
-        </div>
+
+      </div>
+
+      <!-- KPI -->
+      <section class="kpi-row">
+
+        <article
+          class="kpi-card"
+          *ngFor="let kpi of kpis"
+        >
+
+          <p>{{ kpi.title }}</p>
+
+          <strong>{{ kpi.value }}</strong>
+
+          <span>{{ kpi.hint }}</span>
+
+        </article>
+
       </section>
 
-      <section class="kpi-row">
-        <article class="kpi-card" *ngFor="let kpi of kpiValues; trackBy: trackByKpi">
-          <p>{{ kpi.title }}</p>
-          <strong>{{ kpi.value }}</strong>
-          <span>{{ kpi.hint }}</span>
-        </article>
-      </section>
 
       <section class="agenda-grid" *ngIf="viewMode === 'day'">
         <article class="day-calendar-card">
@@ -154,39 +233,39 @@
         <article class="week-card">
           <h3>{{ periodTitle }}</h3>
 
-          <div class="calendar-grid">
-            <div class="time-head"></div>
+      <!-- ========================= -->
+      <!-- VISTAS -->
+      <!-- ========================= -->
 
-            <div
-              class="day-head"
-              *ngFor="let day of weekDays; trackBy: trackByDay"
-              [class.selected]="day.selected"
-              [class.weekend]="day.weekend"
-            >
-              <span>{{ day.name }}</span>
-              <strong>{{ day.date }}</strong>
-            </div>
 
-            <ng-container *ngFor="let slot of timeSlots; trackBy: trackBySlot">
-              <div class="time-cell">{{ slot }}</div>
+      <section
+        class="calendar-wrapper"
+        [ngSwitch]="viewMode"
+      >
 
-              <ng-container *ngFor="let day of weekDays; trackBy: trackByDay">
-                <div class="slot-cell"></div>
-              </ng-container>
-            </ng-container>
+        <!-- ================================= -->
+        <!-- VISTA DÍA -->
+        <!-- ================================= -->
 
-            <article
-              class="event-chip"
-              *ngFor="let event of calendarEvents; trackBy: trackByEvent"
-              [class.free]="event.variant === 'libre'"
-              [class.closed]="event.variant === 'cerrado'"
-              [style.gridColumn]="event.day + 2"
-              [style.gridRow]="event.start + 2 + ' / span ' + event.span"
-            >
-              {{ event.title }}
-            </article>
+        <section
+          *ngSwitchCase="'day'"
+          class="calendar-grid day-view"
+        >
+
+          <!-- ESQUINA -->
+          <div class="time-head"></div>
+
+          <!-- DÍA -->
+          <div class="day-head">
+
+            {{ selectedDay?.name || 'Día' }}
+
+            <span>
+              {{ selectedDay?.date || '' }}
+            </span>
+
           </div>
-        </article>
+
 
         <div class="side-column">
           <article class="day-card">
@@ -205,51 +284,335 @@
                 </div>
 
                 <span class="lock">🔒</span>
-              </div>
+
+          <!-- NAV DAY -->
+          <div class="day-nav">
+
+            <button (click)="prevDay()">
+              ⬅ Día
+            </button>
+
+            <button (click)="nextDay()">
+              Día ➡
+            </button>
+
+          </div>
+
+          <!-- HORAS -->
+          <ng-container *ngFor="let time of timeSlots">
+
+            <div class="time-cell">
+              {{ time }}
             </div>
 
-            <ng-template #emptyAgenda>
-              <div class="empty-panel">
-                <p>No hay citas registradas para este periodo.</p>
+            <div class="slot-cell">
+
+              <div
+                class="event-chip"
+                *ngFor="let appt of getAppointmentsAt(selectedDay, time)"
+                (click)="cancelAppointment(appt.id)"
+              >
+                {{ appt.name }}
               </div>
-            </ng-template>
-          </article>
 
-          <article class="legend-card">
-            <h4>Leyenda</h4>
-            <div class="legend-item"><span class="dot cita"></span><span>Cita</span></div>
-            <div class="legend-item"><span class="dot libre"></span><span>Dia Libre</span></div>
-            <div class="legend-item"><span class="dot cerrado"></span><span>Cerrado</span></div>
-            <button type="button" class="block-btn">+ Bloquear Hora</button>
-          </article>
-        </div>
-      </section>
-
-      <section class="agenda-grid" *ngIf="viewMode === 'month'">
-        <article class="month-calendar-card" style="grid-column: 1 / -1;">
-          <h3>{{ periodTitle }}</h3>
-
-          <div class="month-calendar-grid">
-            <div class="month-header" *ngFor="let day of dayNames; trackBy: trackBySlot">
-              {{ day.slice(0, 3) }}
             </div>
+
+          </ng-container>
+
+        </section>
+
+        <!-- ================================= -->
+        <!-- VISTA SEMANA -->
+        <!-- ================================= -->
+
+        <section
+          *ngSwitchCase="'week'"
+          class="calendar-grid week-view"
+        >
+
+          <!-- ESQUINA -->
+          <div class="time-head"></div>
+
+          <!-- DÍAS -->
+          <div
+            class="day-head"
+            *ngFor="let day of calendarDays"
+          >
+
+            {{ day.name }}
+
+            <span>
+              {{ day.date }}
+            </span>
+
+          </div>
+
+          <!-- HORAS -->
+          <ng-container *ngFor="let time of timeSlots">
+
+            <div class="time-cell">
+              {{ time }}
+            </div>
+
+            <ng-container *ngFor="let day of calendarDays">
+
+              <div class="slot-cell">
+
+                <div
+                  class="event-chip"
+                  *ngFor="let appt of getAppointmentsAt(day, time)"
+                  (click)="cancelAppointment(appt.id)"
+                >
+                  {{ appt.name }}
+                </div>
+
+
+              </div>
+
+            </ng-container>
+
+          </ng-container>
+
+        </section>
+
+        <!-- ================================= -->
+        <!-- VISTA MES -->
+        <!-- ================================= -->
+
+        <section *ngSwitchCase="'month'">
+
+          <!-- WEEKDAYS -->
+          <div class="month-weekdays">
+
+            <div class="month-weekday">Dom</div>
+            <div class="month-weekday">Lun</div>
+            <div class="month-weekday">Mar</div>
+            <div class="month-weekday">Mié</div>
+            <div class="month-weekday">Jue</div>
+            <div class="month-weekday">Vie</div>
+            <div class="month-weekday">Sáb</div>
+
+          </div>
+
+          <!-- GRID -->
+          <section class="month-grid">
 
             <div
               class="month-day"
-              *ngFor="let day of monthDays; trackBy: trackByMonthDay"
-              [class.current-month]="day.currentMonth"
-              [class.today]="day.today"
-              [class.selected]="day.selected"
+              *ngFor="let day of monthDays"
             >
-              <span class="day-number">{{ day.date }}</span>
-              <div class="day-appointments">
-                <div class="appointment-dot" *ngFor="let apt of day.appointments.slice(0, 3); trackBy: trackByTime"></div>
-                <span class="more-count" *ngIf="day.appointments.length > 3">+{{ day.appointments.length - 3 }}</span>
+
+              <div class="month-day-header">
+                {{ day.day }}
               </div>
+
+              <div class="month-events">
+
+                <div
+                  class="event-chip"
+                  *ngFor="let appt of day.appointments"
+                  (click)="cancelAppointment(appt.id)"
+                >
+                  {{ appt.name }}
+                </div>
+
+              </div>
+
             </div>
-          </div>
-        </article>
+
+          </section>
+
+        </section>
+
       </section>
+
     </main>
+
   </div>
+
+  <!-- ========================= -->
+  <!-- MODAL OPCIONES -->
+  <!-- ========================= -->
+
+  <div
+    class="modal-overlay"
+    *ngIf="showBookingOptions"
+    (click)="closeBookingOptions()"
+  >
+
+    <div
+      class="modal-content"
+      (click)="$event.stopPropagation()"
+    >
+
+      <header class="modal-header">
+
+        <h2>
+          TIPO DE CLIENTE PARA AÑADIR CITA
+        </h2>
+
+      </header>
+
+      <div class="option-buttons">
+
+        <button
+          type="button"
+          (click)="openRegisteredBooking()"
+        >
+          Cliente registrado
+        </button>
+
+        <button
+          type="button"
+          (click)="openUnregisteredBooking()"
+        >
+          Cliente no registrado
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ========================= -->
+  <!-- MODAL RESERVA -->
+  <!-- ========================= -->
+
+  <div
+    class="modal-overlay"
+    *ngIf="showBookingModal"
+    (click)="closeBookingModal()"
+  >
+
+    <div
+      class="modal-content"
+      (click)="$event.stopPropagation()"
+    >
+
+      <header class="modal-header">
+
+        <h2>Reservar Cita</h2>
+
+        <button
+          type="button"
+          class="close-btn"
+          (click)="closeBookingModal()"
+        >
+          ×
+        </button>
+
+      </header>
+
+      <form
+        class="booking-form"
+        (ngSubmit)="bookAppointment()"
+      >
+
+        <!-- FECHA -->
+        <div class="form-group">
+
+          <label>Fecha *</label>
+
+          <input
+            type="date"
+            [(ngModel)]="bookingDate"
+            name="bookingDate"
+          >
+
+        </div>
+
+        <!-- HORA -->
+        <div class="form-group">
+
+          <label>Hora *</label>
+
+          <select
+            [(ngModel)]="bookingTime"
+            name="bookingTime"
+          >
+
+            <option
+              *ngFor="let slot of timeSlots"
+              [value]="slot"
+            >
+              {{ slot }}
+            </option>
+
+          </select>
+
+        </div>
+
+        <!-- CLIENTE REGISTRADO -->
+        <div *ngIf="clientType === 'registered'">
+
+          <div class="form-group">
+
+            <label>Cliente registrado *</label>
+
+            <input
+              type="text"
+              [(ngModel)]="guestName"
+              name="guestName"
+            >
+
+          </div>
+
+        </div>
+
+        <!-- CLIENTE NO REGISTRADO -->
+        <div *ngIf="clientType === 'unregistered'">
+
+          <div class="form-group">
+
+            <label>Nombre cliente *</label>
+
+            <input
+              type="text"
+              [(ngModel)]="guestName"
+              name="guestName"
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Teléfono</label>
+
+            <input
+              type="text"
+              [(ngModel)]="guestPhone"
+              name="guestPhone"
+            >
+
+          </div>
+
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="form-actions">
+
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="closeBookingModal()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="confirm-btn"
+          >
+            Confirmar
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
 </section>

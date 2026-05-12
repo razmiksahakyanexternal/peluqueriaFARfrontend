@@ -1,22 +1,35 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+
 import { AppointmentsLocalService } from '../appointments-local.service';
-import { ReservasApiService, CreateAppointmentRequest } from '../reservas-api.service';
+import {
+  ReservasApiService,
+  CreateAppointmentRequest
+} from '../reservas-api.service';
+
 import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-reservas',
   templateUrl: './reservas.component.html',
   styleUrl: './reservas.component.css',
-  standalone: false
+  standalone: true,
+  imports: [FormsModule, CommonModule]
 })
 export class ReservasComponent implements OnInit {
+
   currentDate = new Date();
+
   selectedDate: Date | null = null;
   selectedTime: string | null = null;
+
   citaConfirmada = false;
+
   errorMessage: string | null = null;
   successMessage: string | null = null;
+
   occupiedHours = new Set<string>();
 
   availableHours: string[] = [
@@ -38,217 +51,435 @@ export class ReservasComponent implements OnInit {
     private reservasApiService: ReservasApiService
   ) {}
 
+  // =========================
+  // INIT
+  // =========================
+
   ngOnInit(): void {
+
     if (!this.authService.isLoggedIn()) {
       this.router.navigate(['/inicio-sesion']);
       return;
     }
 
     this.initializeDefaultDate();
+
     this.loadOccupiedHours();
   }
 
+  // =========================
+  // CALENDARIO
+  // =========================
+
   getDaysOfMonth(date: Date): (number | null)[] {
+
     const year = date.getFullYear();
+
     const month = date.getMonth();
+
     const firstDay = new Date(year, month, 1);
+
     const lastDay = new Date(year, month + 1, 0);
+
     const daysInMonth = lastDay.getDate();
+
     const startingDayOfWeek = (firstDay.getDay() + 6) % 7;
 
     const days: (number | null)[] = [];
+
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
+
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(i);
     }
+
     return days;
   }
 
   isWeekday(day: number | null): boolean {
+
     if (!day) return false;
-    const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+
+    const date = new Date(
+      this.currentDate.getFullYear(),
+      this.currentDate.getMonth(),
+      day
+    );
+
     const dayOfWeek = date.getDay();
+
     return dayOfWeek >= 1 && dayOfWeek <= 5;
   }
 
-<<<<<<< Updated upstream
-  selectDate(day: number | null): void {
-    if (day && this.isWeekday(day)) {
-=======
   isFutureDate(day: number | null): boolean {
+
     if (!day) return false;
-    const date = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+
+    const date = new Date(
+      this.currentDate.getFullYear(),
+      this.currentDate.getMonth(),
+      day
+    );
+
     const today = new Date();
+
     today.setHours(0, 0, 0, 0);
+
     date.setHours(0, 0, 0, 0);
+
     return date >= today;
   }
 
   selectDate(day: number | null): void {
+
     if (day && this.isWeekday(day) && this.isFutureDate(day)) {
->>>>>>> Stashed changes
+
       this.selectedDate = new Date(
         this.currentDate.getFullYear(),
         this.currentDate.getMonth(),
         day
       );
+
       this.selectedTime = null;
+
       this.loadOccupiedHours();
     }
   }
 
   isSelected(day: number | null): boolean {
+
     if (!day || !this.selectedDate) return false;
-    return this.selectedDate.getDate() === day &&
-           this.selectedDate.getMonth() === this.currentDate.getMonth() &&
-           this.selectedDate.getFullYear() === this.currentDate.getFullYear();
+
+    return (
+      this.selectedDate.getDate() === day &&
+      this.selectedDate.getMonth() === this.currentDate.getMonth() &&
+      this.selectedDate.getFullYear() === this.currentDate.getFullYear()
+    );
   }
 
+  // =========================
+  // HORAS
+  // =========================
+
   selectTime(time: string): void {
-    if (this.isTimeOccupied(time)) {
-      return;
-    }
-    this.selectedTime = this.selectedTime === time ? null : time;
+
+    if (this.isTimeOccupied(time)) return;
+
+    this.selectedTime =
+      this.selectedTime === time ? null : time;
   }
 
   isTimeOccupied(time: string): boolean {
-    return this.occupiedHours.has(this.normalizeTimeToHourMinute(time));
+
+    return this.occupiedHours.has(
+      this.normalizeTimeToHourMinute(time)
+    );
   }
+
+  // =========================
+  // CREAR CITA
+  // =========================
 
   confirmBooking(): void {
-    if (this.selectedDate && this.selectedTime) {
-      this.errorMessage = null;
-      this.successMessage = null;
-      const appointmentDate = this.toIsoDate(this.selectedDate);
-      const startTime = this.selectedTime + ':00'; // formato HH:mm:ss
-      const token = this.authService.getToken();
-      if (!token) {
-        this.errorMessage = 'Debes iniciar sesión para reservar.';
-        return;
-      }
-      const payload: CreateAppointmentRequest = {
-        appointmentDate,
-        startTime,
-        guestName: this.authService.getFullName(),
-        guestPhone: undefined // Puedes pedirlo en el formulario si lo necesitas
-      };
-      this.reservasApiService.createAppointment(payload, token).subscribe({
+
+    if (!this.selectedDate || !this.selectedTime) return;
+
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    const appointmentDate = this.toIsoDate(this.selectedDate);
+
+    const startTime = this.selectedTime + ':00';
+
+    const token = this.authService.getToken();
+
+    if (!token) {
+      this.errorMessage = 'Debes iniciar sesión para reservar.';
+      return;
+    }
+
+    const payload: CreateAppointmentRequest = {
+      appointmentDate,
+      startTime,
+      guestName: this.authService.getFullName(),
+      guestPhone: undefined
+    };
+
+    this.reservasApiService
+      .createAppointment(payload, token)
+      .subscribe({
+
         next: (response) => {
+
           if (this.selectedTime) {
-            this.occupiedHours.add(this.normalizeTimeToHourMinute(this.selectedTime));
+
+            this.occupiedHours.add(
+              this.normalizeTimeToHourMinute(this.selectedTime)
+            );
           }
+
           this.citaConfirmada = true;
-          this.successMessage = response.message || 'La cita se ha confirmado correctamente.';
+
+          this.successMessage =
+            response.message || 'Cita creada correctamente.';
+
           this.errorMessage = null;
+
+          this.loadOccupiedHours();
+
           this.cdr.detectChanges();
         },
+
         error: (error) => {
+
           this.citaConfirmada = false;
+
           this.successMessage = null;
-          this.errorMessage = error?.error?.message || 'No se pudo guardar la cita.';
-          this.cdr.detectChanges();
+
+          this.errorMessage =
+            error?.error?.message || 'Error al crear cita.';
         }
       });
-    }
   }
 
-  volverAlInicio(): void {
-    this.router.navigate(['/home']);
-  }
+  // =========================
+  // CANCELAR CITA
+  // =========================
 
-  getFormattedDate(): string {
-    if (!this.selectedDate) return '';
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
-    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    const dayName = days[this.selectedDate.getDay()];
-    const day = this.selectedDate.getDate();
-    const month = months[this.selectedDate.getMonth()];
-    const year = this.selectedDate.getFullYear();
-    return `${dayName}, ${day} de ${month} de ${year} a las ${this.selectedTime} h`;
-  }
+  cancelAppointment(id: number): void {
 
-  previousMonth(): void {
-    this.currentDate = new Date(
-      this.currentDate.getFullYear(),
-      this.currentDate.getMonth() - 1,
-      1
+    const token = this.authService.getToken();
+
+    if (!token) return;
+
+    const confirmDelete = confirm(
+      '¿Seguro que quieres cancelar esta cita?'
     );
-    this.selectedDate = null;
-    this.selectedTime = null;
-    this.occupiedHours.clear();
+
+    if (!confirmDelete) return;
+
+    this.reservasApiService
+      .deleteAppointment(id, token)
+      .subscribe({
+
+        next: () => {
+
+          this.loadOccupiedHours();
+
+          this.successMessage =
+            'Cita cancelada correctamente.';
+
+          this.errorMessage = null;
+        },
+
+        error: () => {
+
+          this.errorMessage =
+            'No se pudo cancelar la cita.';
+        }
+      });
   }
+
+  // =========================
+  // NAVEGACIÓN MES
+  // =========================
 
   nextMonth(): void {
+
     this.currentDate = new Date(
       this.currentDate.getFullYear(),
       this.currentDate.getMonth() + 1,
       1
     );
+
     this.selectedDate = null;
+
     this.selectedTime = null;
+
     this.occupiedHours.clear();
+
+    this.loadOccupiedHours();
   }
 
-  getMonthYear(): string {
-    const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    return `${months[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
+  previousMonth(): void {
+
+    this.currentDate = new Date(
+      this.currentDate.getFullYear(),
+      this.currentDate.getMonth() - 1,
+      1
+    );
+
+    this.selectedDate = null;
+
+    this.selectedTime = null;
+
+    this.occupiedHours.clear();
+
+    this.loadOccupiedHours();
   }
 
-  private toIsoDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, '0');
-    const day = `${date.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
+  // =========================
+  // OCUPADOS
+  // =========================
 
   private loadOccupiedHours(): void {
+
     if (!this.selectedDate) {
+
       this.occupiedHours.clear();
+
       return;
     }
 
     const token = this.authService.getToken();
+
     if (!token) {
+
       this.occupiedHours.clear();
+
       return;
     }
 
-    this.reservasApiService.getOccupiedSlots(this.toIsoDate(this.selectedDate), token).subscribe({
-      next: (occupiedSlots) => {
-        this.occupiedHours = new Set(
-          occupiedSlots.map((slot) => this.normalizeTimeToHourMinute(slot))
-        );
-        if (this.selectedTime && this.isTimeOccupied(this.selectedTime)) {
-          this.selectedTime = null;
+    this.reservasApiService
+      .getOccupiedSlots(
+        this.toIsoDate(this.selectedDate),
+        token
+      )
+      .subscribe({
+
+        next: (occupiedSlots) => {
+
+          this.occupiedHours = new Set(
+            occupiedSlots.map(s =>
+              this.normalizeTimeToHourMinute(s)
+            )
+          );
+
+          this.cdr.detectChanges();
+        },
+
+        error: () => {
+
+          this.occupiedHours.clear();
         }
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.occupiedHours.clear();
-        this.cdr.detectChanges();
-      }
-    });
+      });
+  }
+
+  // =========================
+  // HELPERS
+  // =========================
+
+  private toIsoDate(date: Date): string {
+
+    return date.toISOString().split('T')[0];
+  }
+
+  private normalizeTimeToHourMinute(time: string): string {
+
+    return time.substring(0, 5);
+  }
+
+  // =========================
+  // UI
+  // =========================
+
+  volverAlInicio(): void {
+
+    this.router.navigate(['/home']);
   }
 
   private initializeDefaultDate(): void {
-    const today = new Date();
-    this.currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    const candidate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    while (candidate.getDay() === 0 || candidate.getDay() === 6) {
+    const today = new Date();
+
+    this.currentDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    );
+
+    const candidate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    while (
+      candidate.getDay() === 0 ||
+      candidate.getDay() === 6
+    ) {
       candidate.setDate(candidate.getDate() + 1);
     }
 
     this.selectedDate = candidate;
+
     this.selectedTime = null;
   }
 
-  private normalizeTimeToHourMinute(time: string): string {
-    return time.length >= 5 ? time.substring(0, 5) : time;
+  getMonthYear(): string {
+
+    const months = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre'
+    ];
+
+    return `${months[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
+  }
+
+  getFormattedDate(): string {
+
+    if (!this.selectedDate) return '';
+
+    const days = [
+      'Domingo',
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado'
+    ];
+
+    const months = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre'
+    ];
+
+    const dayName = days[this.selectedDate.getDay()];
+
+    const day = this.selectedDate.getDate();
+
+    const month = months[this.selectedDate.getMonth()];
+
+    const year = this.selectedDate.getFullYear();
+
+    const timeText =
+      this.selectedTime
+        ? ` a las ${this.selectedTime}`
+        : '';
+
+    return `${dayName}, ${day} de ${month} de ${year}${timeText} h`;
   }
 }
