@@ -23,6 +23,12 @@ export interface AuthResponse {
   surname?: string;
 }
 
+export interface RegisterResponse {
+  message: string;
+  verificationUrl?: string | null;
+  verificationEmailSent?: boolean | null;
+}
+
 type UserRole = 'CLIENT' | 'BARBER' | 'ADMIN';
 
 @Injectable({
@@ -37,12 +43,24 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  register(payload: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/register`, payload);
+  register(payload: RegisterRequest): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.baseUrl}/register`, payload);
   }
 
   login(payload: AuthRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, payload);
+  }
+
+  checkEmail(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/check-email`, { email });
+  }
+
+  resendVerificationEmail(email: string): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.baseUrl}/resend-verification`, { email });
+  }
+
+  redirectToGoogleLogin(): void {
+    window.location.href = `${this.baseUrl}/google/login`;
   }
 
   extractJwtToken(response: AuthResponse): string | null {
@@ -85,8 +103,6 @@ export class AuthService {
 
   getRole(): string | null {
     return localStorage.getItem(this.roleKey);
-    localStorage.removeItem(this.userNameKey);
-    localStorage.removeItem(this.userSurnameKey);
   }
 
   getRedirectRouteByRole(): string {
@@ -109,5 +125,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
+    localStorage.removeItem(this.userNameKey);
+    localStorage.removeItem(this.userSurnameKey);
   }
 }

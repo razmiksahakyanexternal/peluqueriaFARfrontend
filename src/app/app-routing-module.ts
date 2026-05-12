@@ -6,6 +6,7 @@ import { HomeComponent } from './home/home.component';
 import { PeluqueroComponent } from './peluquero/peluquero.component';
 import { ReservasComponent } from './reservas/reservas.component';
 import { MisCitasComponent } from './mis-citas/mis-citas.component';
+import { RegistroExitosoComponent } from './registro-exitoso/registro-exitoso.component';
 
 const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'inicio-sesion' },
@@ -15,6 +16,7 @@ const routes: Routes = [
   { path: 'mis-citas', component: MisCitasComponent },
   { path: 'inicio-sesion', component: InicioSesionComponent },
   { path: 'registro', component: RegistroComponent },
+  { path: 'registro-exitoso', component: RegistroExitosoComponent },
   { path: '**', redirectTo: 'inicio-sesion' }
 ];
 

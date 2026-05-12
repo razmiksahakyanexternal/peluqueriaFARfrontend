@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 @Component({
@@ -14,9 +14,35 @@ export class InicioSesionComponent implements OnInit {
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
+    const token = this.route.snapshot.queryParamMap.get('token');
+    if (token) {
+      this.authService.saveToken(token);
+      this.router.navigate(['/home']);
+      return;
+    }
+
+    const error = this.route.snapshot.queryParamMap.get('error');
+    if (error) {
+      this.errorMessage = decodeURIComponent(error);
+    }
+
+    const verificationSent = this.route.snapshot.queryParamMap.get('verificationSent');
+    if (verificationSent === 'true') {
+      this.successMessage = 'Se ha mandado un correo de verificacion de la cuenta, si esta existe.';
+    }
+
+    const verified = this.route.snapshot.queryParamMap.get('verified');
+    if (verified === 'true') {
+      this.successMessage = 'Tu cuenta ha sido verificada con exito. Ya puedes iniciar sesion.';
+    }
+
     if (this.authService.isLoggedIn()) {
       this.router.navigate([this.authService.getRedirectRouteByRole()]);
     }
@@ -58,5 +84,10 @@ export class InicioSesionComponent implements OnInit {
           this.errorMessage = err?.error?.message || 'Error iniciando sesion. Verifica tus credenciales.';
         },
       });
+  }
+
+  loginWithGoogle(): void {
+    this.errorMessage = null;
+    this.authService.redirectToGoogleLogin();
   }
 }

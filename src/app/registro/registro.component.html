@@ -127,9 +127,10 @@
         <button
           type="submit"
           class="btn w-100 py-3 text-white fs-6 fw-medium mb-4"
-          [disabled]="registroForm.invalid || (confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value)"
+          [disabled]="registroForm.invalid || (confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value) || loading"
           style="background-color: #d17871; border: none; border-radius: 6px;">
-          Crear cuenta
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ loading ? 'Creando cuenta...' : 'Crear cuenta' }}
         </button>
 
         <hr class="mt-4 mb-4 border-secondary opacity-25">

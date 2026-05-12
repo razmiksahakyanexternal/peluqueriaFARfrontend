@@ -12,6 +12,7 @@ import { AuthService, RegisterRequest } from '../auth.service';
 })
 export class RegistroComponent implements OnInit {
   submitted = false;
+  loading = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
@@ -19,8 +20,8 @@ export class RegistroComponent implements OnInit {
 
  ngOnInit(): void {
    
-     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/registro']);
+    if (this.authService.isLoggedIn()) {
+      this.router.navigate([this.authService.getRedirectRouteByRole()]);
     }
   }
 
@@ -33,23 +34,35 @@ export class RegistroComponent implements OnInit {
       return;
     }
 
+    const { nombre, apellidos, email, telefono, password, confirmPassword } = form.value;
+
+    if (password !== confirmPassword) {
+      this.errorMessage = 'Las contrasenas no coinciden.';
+      return;
+    }
+
     const payload: RegisterRequest = {
-      name: form.value.nombre,
-      surname: form.value.apellidos,
-      email: form.value.email,
-      password: form.value.password,
-      mobilePhone: form.value.telefono ?? ''
+      name: nombre,
+      surname: apellidos,
+      email,
+      password,
+      mobilePhone: telefono ?? ''
     };
+
+    this.loading = true;
 
     this.authService.register(payload).subscribe({
       next: (response) => {
-        this.successMessage = 'Cuenta creada correctamente. Redirigiendo al inicio...';
-        setTimeout(() => this.router.navigate(['/inicio-sesion']), 1200);
+        this.loading = false;
+        const state = { ...response, email };
+        sessionStorage.setItem('registerEmail', email);
+        sessionStorage.setItem('registerSuccess', JSON.stringify(state));
+        this.router.navigate(['/registro-exitoso'], { state });
       },
       error: (err) => {
+        this.loading = false;
         if (err?.error && typeof err.error === 'object') {
-          const errors = Object.values(err.error).join('. ');
-          this.errorMessage = errors || 'Error al registrar. Intenta nuevamente.';
+          this.errorMessage = err.error.message || err.error.email || Object.values(err.error).join('. ');
         } else {
           this.errorMessage = err?.error?.message || 'Error al registrar. Intenta nuevamente.';
         }

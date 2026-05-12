@@ -10,19 +10,25 @@ import { RegistroComponent } from './registro/registro.component';
 import { HomeComponent } from './home/home.component';
 import { PeluqueroComponent } from './peluquero/peluquero.component';
 import { ReservasComponent } from './reservas/reservas.component';
+import { MisCitasComponent } from './mis-citas/mis-citas.component';
+import { RegistroExitosoComponent } from './registro-exitoso/registro-exitoso.component';
 
 @NgModule({
   declarations: [
     App,
     InicioSesionComponent,
     RegistroComponent,
-    HomeComponent
+    HomeComponent,
+    RegistroExitosoComponent
   ],
   imports: [
     BrowserModule,
     FormsModule,
     HttpClientModule,
-    AppRoutingModule
+    AppRoutingModule,
+    PeluqueroComponent,
+    ReservasComponent,
+    MisCitasComponent
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),
