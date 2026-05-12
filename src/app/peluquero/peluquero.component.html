@@ -180,7 +180,9 @@
           <label for="bookingTime">Hora</label>
           <select id="bookingTime" [(ngModel)]="bookingTime" name="bookingTime" required>
             <option value="">Seleccionar hora</option>
-            <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot" [disabled]="isBookingTimeBlocked(slot)">
+              {{ slot }}{{ isBookingTimeBlocked(slot) ? ' - bloqueado' : '' }}
+            </option>
           </select>
         </div>
 
@@ -292,13 +294,13 @@
         <div class="feedback error" *ngIf="workingDaysError">{{ workingDaysError }}</div>
 
         <div class="form-group">
-          <label><input type="checkbox" [checked]="workingDaysDraft.has('MONDAY')" (change)="toggleWorkingDay('MONDAY', $any($event.target).checked)"> Lunes</label>
-          <label><input type="checkbox" [checked]="workingDaysDraft.has('TUESDAY')" (change)="toggleWorkingDay('TUESDAY', $any($event.target).checked)"> Martes</label>
-          <label><input type="checkbox" [checked]="workingDaysDraft.has('WEDNESDAY')" (change)="toggleWorkingDay('WEDNESDAY', $any($event.target).checked)"> Miércoles</label>
-          <label><input type="checkbox" [checked]="workingDaysDraft.has('THURSDAY')" (change)="toggleWorkingDay('THURSDAY', $any($event.target).checked)"> Jueves</label>
-          <label><input type="checkbox" [checked]="workingDaysDraft.has('FRIDAY')" (change)="toggleWorkingDay('FRIDAY', $any($event.target).checked)"> Viernes</label>
-          <label><input type="checkbox" [checked]="workingDaysDraft.has('SATURDAY')" (change)="toggleWorkingDay('SATURDAY', $any($event.target).checked)"> Sábado</label>
-          <label><input type="checkbox" [checked]="workingDaysDraft.has('SUNDAY')" (change)="toggleWorkingDay('SUNDAY', $any($event.target).checked)"> Domingo</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('MONDAY')" (change)="toggleWorkingDay('MONDAY', $event)"> Lunes</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('TUESDAY')" (change)="toggleWorkingDay('TUESDAY', $event)"> Martes</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('WEDNESDAY')" (change)="toggleWorkingDay('WEDNESDAY', $event)"> Miércoles</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('THURSDAY')" (change)="toggleWorkingDay('THURSDAY', $event)"> Jueves</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('FRIDAY')" (change)="toggleWorkingDay('FRIDAY', $event)"> Viernes</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('SATURDAY')" (change)="toggleWorkingDay('SATURDAY', $event)"> Sábado</label>
+          <label><input type="checkbox" [checked]="workingDaysDraft.has('SUNDAY')" (change)="toggleWorkingDay('SUNDAY', $event)"> Domingo</label>
         </div>
 
         <div class="form-actions">

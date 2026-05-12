@@ -209,7 +209,7 @@ export class PeluqueroComponent implements OnInit {
   }
 
   get totalClients(): number {
-    return this.dayAppointments.filter(appointment => appointment.name !== '--').length;
+    return this.dayAppointments.filter(appointment => appointment.name !== '--' && appointment.status !== 'blocked').length;
   }
 
   get occupancyPercent(): number {
@@ -222,7 +222,7 @@ export class PeluqueroComponent implements OnInit {
   }
 
   get upcomingAppointments(): DayAppointment[] {
-    return this.dayAppointments.filter(appointment => appointment.name !== '--');
+    return this.dayAppointments.filter(appointment => appointment.name !== '--' && appointment.status !== 'blocked');
   }
 
   get nextAppointment(): DayAppointment | null {
@@ -364,9 +364,14 @@ export class PeluqueroComponent implements OnInit {
     this.showWorkingDaysModal = false;
   }
 
-  toggleWorkingDay(day: DayOfWeek, checked: boolean): void {
-    if (checked) this.workingDaysDraft.add(day);
-    else this.workingDaysDraft.delete(day);
+  toggleWorkingDay(day: DayOfWeek, event: Event): void {
+    const checked = (event.target as HTMLInputElement)?.checked;
+    if (checked) {
+      this.workingDaysDraft.add(day);
+    } else {
+      this.workingDaysDraft.delete(day);
+    }
+    this.cdr.detectChanges();
   }
 
   saveWorkingDays(): void {
@@ -398,11 +403,18 @@ export class PeluqueroComponent implements OnInit {
         setTimeout(() => this.closeWorkingDaysModal(), 700);
       },
       error: (err) => {
-        this.workingDaysError = err?.error?.message || 'Error guardando días laborables';
+        this.workingDaysError = this.extractApiError(err, 'Error guardando días laborables');
         this.isSavingWorkingDays = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private extractApiError(err: any, fallback: string): string {
+    if (typeof err?.error === 'string') {
+      return err.error;
+    }
+    return err?.error?.message || err?.error?.error || fallback;
   }
 
   isNonWorkingDate(isoDate: string): boolean {
@@ -542,6 +554,16 @@ export class PeluqueroComponent implements OnInit {
     return this.blockedCellKeys.has(this.cellKey(isoDate, timeSlot));
   }
 
+  isBookingTimeBlocked(timeSlot: string): boolean {
+    if (!this.bookingDate || !timeSlot) return false;
+    const entry = this.blockedByDate.get(this.bookingDate);
+    if (!entry) return false;
+    if (entry.allDay) return true;
+    const slotStart = this.toMinutes(timeSlot);
+    const slotEnd = slotStart + 15;
+    return entry.intervals.some(([start, end]) => slotStart < end && slotEnd > start);
+  }
+
   private rebuildBlockedLookups(): void {
     this.blockedByDate.clear();
     for (const slot of this.blockedSlots) {
@@ -600,6 +622,11 @@ export class PeluqueroComponent implements OnInit {
 
     if (this.workingDays.size > 0 && this.isNonWorkingDate(this.bookingDate)) {
       this.bookingErrorMessage = 'No se puede reservar ese día porque está marcado como no laboral';
+      return;
+    }
+
+    if (this.isBookingTimeBlocked(this.bookingTime)) {
+      this.bookingErrorMessage = 'No se puede reservar una cita en un horario bloqueado';
       return;
     }
 
