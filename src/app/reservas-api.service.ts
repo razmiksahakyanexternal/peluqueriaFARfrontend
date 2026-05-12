@@ -9,6 +9,13 @@ export interface CreateAppointmentRequest {
 	guestPhone?: string;
 }
 
+export interface UserItem {
+	id: number;
+	name: string;
+	surname: string;
+	email: string;
+}
+
 export interface CreateAppointmentResponse {
 	id: number;
 	message: string;
@@ -45,6 +52,22 @@ export class ReservasApiService {
 	createAppointment(payload: CreateAppointmentRequest, token: string): Observable<CreateAppointmentResponse> {
 		return this.http.post<CreateAppointmentResponse>(this.baseUrl, payload, { 
 			headers: this.getHeaders(token)
+		});
+	}
+	getUsers(token: string): Observable<UserItem[]> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<UserItem[]>(this.usersUrl, { headers });
+	}
+
+	searchUsers(query: string, token: string): Observable<UserItem[]> {
+		const headers = new HttpHeaders({
+			Authorization: `Bearer ${token}`,
+		});
+		return this.http.get<UserItem[]>(`${this.usersUrl}/search`, {
+			headers,
+			params: { q: query },
 		});
 	}
 	
