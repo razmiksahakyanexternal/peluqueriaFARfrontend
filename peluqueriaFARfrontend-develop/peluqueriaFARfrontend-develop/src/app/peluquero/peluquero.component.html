@@ -1,0 +1,374 @@
+<section class="agenda-page">
+  <div class="agenda-shell">
+    <aside class="agenda-sidebar">
+      <div class="sidebar-top">
+        <div class="brand-row">
+          <div class="brand-icon">F</div>
+          <div>
+            <h1>Peluqueria</h1>
+            <p>Panel del Peluquero</p>
+          </div>
+        </div>
+
+        <div class="sidebar-card profile-card">
+          <span class="eyebrow">Profesional</span>
+          <h2>{{ currentUser.name }} {{ currentUser.surname }}</h2>
+        </div>
+
+        <div class="sidebar-card next-card" *ngIf="nextAppointment; else noNextAppointment">
+          <span class="eyebrow">Proxima cita</span>
+          <strong>{{ nextAppointment.time }}</strong>
+          <p>{{ nextAppointment.name }}</p>
+          <small>{{ formattedToday }}</small>
+        </div>
+
+        <ng-template #noNextAppointment>
+          <div class="sidebar-card next-card is-empty">
+            <span class="eyebrow">Proxima cita</span>
+            <strong>Sin reservas</strong>
+          </div>
+        </ng-template>
+      </div>
+
+      <button class="logout-btn" type="button" (click)="logout()">Cerrar Sesion</button>
+    </aside>
+
+    <main class="agenda-main">
+      <header class="agenda-header">
+        <h2>Agenda - {{ calendarTitle }}</h2>
+
+        <div class="view-switch">
+          <button class="view-btn" type="button" [class.active]="viewMode === 'day'" (click)="setView('day')">Dia</button>
+          <button class="view-btn" type="button" [class.active]="viewMode === 'week'" (click)="setView('week')">Semana</button>
+          <button class="view-btn" type="button" [class.active]="viewMode === 'month'" (click)="setView('month')">Mes</button>
+        </div>
+
+        <div class="calendar-nav">
+          <button type="button" (click)="viewMode === 'month' ? prevMonth() : prevWeek()">Anterior</button>
+          <button type="button" (click)="goToday()">Hoy</button>
+          <button type="button" (click)="viewMode === 'month' ? nextMonth() : nextWeek()">Siguiente</button>
+        </div>
+      </header>
+
+      <section class="toolbar-row">
+        <div class="toolbar-left">
+          <button type="button" class="add-btn" (click)="openBookingModal()">Anadir cita</button>
+          <button type="button" class="block-btn block-btn-danger" (click)="openBlockModal()">Bloquear hora</button>
+          <button type="button" class="block-btn block-btn-warning" (click)="openWorkingDaysModal()">
+            {{ workingDays.size > 0 ? 'Editar dias' : 'Configurar dias' }}
+          </button>
+        </div>
+        <p class="toolbar-summary">Horario actual: {{ workingHoursText }}</p>
+      </section>
+
+      <section class="kpi-row">
+        <article class="kpi-card" *ngFor="let kpi of kpis">
+          <p>{{ kpi.title }}</p>
+          <strong>{{ kpi.value }}</strong>
+          <span>{{ kpi.hint }}</span>
+        </article>
+      </section>
+
+      <section class="calendar-wrapper" [ngSwitch]="viewMode">
+        <section *ngSwitchCase="'day'" class="calendar-grid day-view">
+          <div class="time-head"></div>
+          <div class="day-head">
+            {{ selectedDay?.name || 'Dia' }}
+            <span>{{ selectedDay?.date || '' }}</span>
+          </div>
+
+          <div class="day-nav">
+            <button type="button" (click)="prevDay()">Anterior dia</button>
+            <button type="button" (click)="nextDay()">Siguiente dia</button>
+          </div>
+
+          <ng-container *ngFor="let time of timeSlots">
+            <div class="time-cell">{{ time }}</div>
+            <div class="slot-cell" [class.blocked]="selectedDay && isSlotBlocked(selectedDay.iso, time)" [class.nonworking]="selectedDay && isNonWorkingDate(selectedDay.iso)">
+              <div class="event-chip" *ngFor="let appt of getAppointmentsAt(selectedDay, time)" (click)="cancelAppointment(appt.id)">
+                {{ appt.name }}
+              </div>
+              <span class="blocked-label" *ngIf="selectedDay && isSlotBlocked(selectedDay.iso, time)">Bloqueado</span>
+            </div>
+          </ng-container>
+        </section>
+
+        <section *ngSwitchCase="'week'" class="calendar-grid week-view">
+          <div class="time-head"></div>
+          <div class="day-head" *ngFor="let day of calendarDays" [class.nonworking-head]="isNonWorkingDate(day.iso)">
+            {{ day.name }}
+            <span>{{ day.date }}</span>
+          </div>
+
+          <ng-container *ngFor="let time of timeSlots">
+            <div class="time-cell">{{ time }}</div>
+            <ng-container *ngFor="let day of calendarDays">
+              <div class="slot-cell" [class.blocked]="isSlotBlocked(day.iso, time)" [class.nonworking]="isNonWorkingDate(day.iso)">
+                <div class="event-chip" *ngFor="let appt of getAppointmentsAt(day, time)" (click)="cancelAppointment(appt.id)">
+                  {{ appt.name }}
+                </div>
+                <span class="blocked-label" *ngIf="isSlotBlocked(day.iso, time)">Bloqueado</span>
+              </div>
+            </ng-container>
+          </ng-container>
+        </section>
+
+        <section *ngSwitchCase="'month'">
+          <div class="month-weekdays">
+            <div class="month-weekday">Dom</div>
+            <div class="month-weekday">Lun</div>
+            <div class="month-weekday">Mar</div>
+            <div class="month-weekday">Mie</div>
+            <div class="month-weekday">Jue</div>
+            <div class="month-weekday">Vie</div>
+            <div class="month-weekday">Sab</div>
+          </div>
+
+          <section class="month-grid">
+            <div class="month-day" *ngFor="let day of monthDays" [class.placeholder]="day.isPlaceholder" [class.nonworking]="day.iso && isNonWorkingDate(day.iso)">
+              <div class="month-day-header">{{ day.day || '' }}</div>
+              <div class="month-events">
+                <div class="event-chip" *ngFor="let appt of day.appointments" (click)="cancelAppointment(appt.id)">
+                  {{ appt.startTime.substring(0, 5) }} {{ appt.guestName }}
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showBookingOptions" (click)="closeBookingOptions()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Tipo de cliente</h2>
+      </header>
+
+      <div class="option-buttons">
+        <button type="button" (click)="openRegisteredBooking()">Cliente registrado</button>
+        <button type="button" (click)="openUnregisteredBooking()">Cliente no registrado</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showBookingModal" (click)="closeBookingModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Reservar cita</h2>
+        <button type="button" class="close-btn" (click)="closeBookingModal()">x</button>
+      </header>
+
+      <form class="booking-form" (ngSubmit)="bookAppointment()">
+        <div class="feedback error" *ngIf="bookingErrorMessage">{{ bookingErrorMessage }}</div>
+        <div class="feedback success" *ngIf="bookingSuccessMessage">{{ bookingSuccessMessage }}</div>
+
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" [(ngModel)]="bookingDate" name="bookingDate" (ngModelChange)="onBookingDateChange()" required>
+        </div>
+
+        <div class="form-group">
+          <label>Hora</label>
+          <select [(ngModel)]="bookingTime" name="bookingTime" required>
+            <option value="">Seleccionar hora</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot" [disabled]="isBookingSlotUnavailable(slot)">
+              {{ slot }}{{ isBookingTimeBlocked(slot) ? ' - bloqueado' : '' }}{{ isBookingTimeOccupied(slot) ? ' - ocupado' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="clientType === 'registered'">
+          <label>Buscar cliente</label>
+          <input type="text" [ngModel]="userSearchQuery" name="userSearchQuery" (input)="onUserSearch($event)" autocomplete="off">
+          <div class="suggestions" *ngIf="showUserSuggestions && userSuggestions.length > 0">
+            <button type="button" *ngFor="let user of userSuggestions" (click)="selectUser(user)">
+              {{ user.name }} {{ user.surname }} - {{ user.email }}
+            </button>
+          </div>
+          <button type="button" class="ghost-btn" *ngIf="selectedUserId" (click)="clearUser()">Quitar cliente</button>
+        </div>
+
+        <div class="form-group">
+          <label>Nombre cliente</label>
+          <input type="text" [(ngModel)]="guestName" name="guestName" required>
+        </div>
+
+        <div class="form-group">
+          <label>Telefono</label>
+          <input type="text" [(ngModel)]="guestPhone" name="guestPhone" maxlength="8" inputmode="numeric">
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeBookingModal()">Cancelar</button>
+          <button type="submit" class="confirm-btn">
+            Confirmar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showBlockModal" (click)="closeBlockModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <h2>{{ editingBlockedSlotId ? 'Editar bloqueo' : 'Bloquear horario' }}</h2>
+          <p class="modal-subtitle">Marca tramos no disponibles o bloquea el dia completo.</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeBlockModal()">x</button>
+      </header>
+
+      <form class="booking-form" (ngSubmit)="blockSlot()">
+        <div class="feedback success" *ngIf="blockSuccessMessage">{{ blockSuccessMessage }}</div>
+        <div class="feedback error" *ngIf="blockErrorMessage">{{ blockErrorMessage }}</div>
+
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" [(ngModel)]="blockDate" name="blockDate" required>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="blockAllDay" name="blockAllDay">
+            <span>Bloquear dia completo</span>
+          </label>
+        </div>
+
+        <div class="form-group" *ngIf="!blockAllDay">
+          <label>Desde</label>
+          <select [(ngModel)]="blockStartTime" name="blockStartTime">
+            <option value="">Seleccionar hora</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="!blockAllDay">
+          <label>Hasta</label>
+          <select [(ngModel)]="blockEndTime" name="blockEndTime">
+            <option value="">Seleccionar hora</option>
+            <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeBlockModal()">Cancelar</button>
+          <button type="submit" class="confirm-btn">
+            {{ editingBlockedSlotId ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+
+      <section class="blocked-list" *ngIf="blockedSlotsForSelectedDate.length > 0">
+        <h3>Bloqueos del dia</h3>
+        <div class="blocked-row" *ngFor="let slot of blockedSlotsForSelectedDate">
+          <div class="blocked-row__info">
+            <span class="blocked-pill">{{ slot.allDay ? 'Dia completo' : 'Horario' }}</span>
+            <strong *ngIf="slot.allDay">Dia completo</strong>
+            <strong *ngIf="!slot.allDay">{{ slot.startTime?.slice(0, 5) }} - {{ slot.endTime?.slice(0, 5) }}</strong>
+          </div>
+          <div class="blocked-row__actions">
+            <button type="button" class="ghost-btn" (click)="editBlockedSlot(slot)">Editar</button>
+            <button type="button" class="ghost-btn danger" (click)="deleteBlockedSlot(slot)">
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showWorkingDaysModal" (click)="closeWorkingDaysModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <h2>Dias laborables</h2>
+          <p class="modal-subtitle">Elige los dias en los que la agenda acepta citas.</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeWorkingDaysModal()">x</button>
+      </header>
+
+      <form class="booking-form" (ngSubmit)="saveWorkingDays()">
+        <div class="feedback success" *ngIf="workingDaysSuccess">{{ workingDaysSuccess }}</div>
+        <div class="feedback error" *ngIf="workingDaysError">{{ workingDaysError }}</div>
+
+        <div class="working-days-grid">
+          <label class="working-day-card" *ngFor="let day of workingDayOptions" [class.active]="workingDaysDraft.has(day.value)">
+            <input type="checkbox" [checked]="workingDaysDraft.has(day.value)" (change)="toggleWorkingDay(day.value, $event)">
+            <span>{{ day.label }}</span>
+          </label>
+        </div>
+
+        <p class="working-days-summary" *ngIf="workingDays.size > 0">Actual: {{ workingDaysText }}</p>
+
+        <section class="schedule-section">
+          <div class="schedule-header">
+            <h3>Horario</h3>
+            <p>Define manana y tarde para limitar las reservas a tu disponibilidad real.</p>
+          </div>
+
+          <div class="schedule-grid">
+            <div class="schedule-card">
+              <strong>Manana</strong>
+              <div class="schedule-inputs">
+                <div class="form-group">
+                  <label>Inicio</label>
+                  <input type="time" [(ngModel)]="morningStart" name="morningStart" required>
+                </div>
+                <div class="form-group">
+                  <label>Fin</label>
+                  <input type="time" [(ngModel)]="morningEnd" name="morningEnd" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="schedule-card">
+              <strong>Tarde</strong>
+              <div class="schedule-inputs">
+                <div class="form-group">
+                  <label>Inicio</label>
+                  <input type="time" [(ngModel)]="afternoonStart" name="afternoonStart">
+                </div>
+                <div class="form-group">
+                  <label>Fin</label>
+                  <input type="time" [(ngModel)]="afternoonEnd" name="afternoonEnd">
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeWorkingDaysModal()">Cancelar</button>
+          <button type="submit" class="confirm-btn">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showConfirmModal" (click)="closeConfirmModal()">
+    <div class="modal-content modal-content-sm" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <h2>{{ confirmDialog.title }}</h2>
+          <p class="modal-subtitle">{{ confirmDialog.message }}</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeConfirmModal()">x</button>
+      </header>
+
+      <div class="confirm-actions">
+        <button type="button" class="cancel-btn" (click)="closeConfirmModal()">Volver</button>
+        <button
+          type="button"
+          class="confirm-btn"
+          [class.confirm-btn-danger]="confirmDialog.tone === 'danger'"
+          (click)="confirmModalAction()"
+          >
+          {{ confirmDialog.actionLabel }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

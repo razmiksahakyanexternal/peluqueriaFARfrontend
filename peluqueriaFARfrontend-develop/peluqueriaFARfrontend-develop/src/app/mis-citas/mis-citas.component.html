@@ -1,0 +1,54 @@
+<div class="mis-citas-container">
+  <div class="mis-citas-card">
+    <div class="mis-citas-header">
+      <h1>Mis Citas</h1>
+      <button type="button" class="close-btn" (click)="volverAlInicio()">&times;</button>
+    </div>
+
+    <div class="feedback-row" *ngIf="successMessage || errorMessage">
+      <p class="feedback-message success" *ngIf="successMessage">{{ successMessage }}</p>
+      <p class="feedback-message error" *ngIf="errorMessage">{{ errorMessage }}</p>
+    </div>
+
+    <div class="mis-citas-content" *ngIf="appointments.length > 0; else emptyState">
+      <article class="appointment-item" *ngFor="let appointment of appointments">
+        <h3>{{ formatAppointmentDate(appointment.appointmentDate) }}</h3>
+        <p>{{ appointment.startTime }} - {{ appointment.endTime }}</p>
+        <div class="appointment-actions">
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="cancelarCita(appointment.id)"
+          >
+            Cancelar cita
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="mis-citas-content">
+        <p class="empty-copy">{{ errorMessage || successMessage || 'Aun no tienes citas reservadas.' }}</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="modal-overlay" *ngIf="confirmAppointmentId !== null" (click)="cerrarModalCancelacion()">
+    <div class="modal-content modal-content-sm" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <h2>Cancelar cita</h2>
+          <p class="modal-subtitle">La cita se eliminara de tu lista y ese hueco volvera a quedar libre.</p>
+        </div>
+        <button type="button" class="close-btn modal-close" (click)="cerrarModalCancelacion()">x</button>
+      </header>
+
+      <div class="confirm-actions">
+        <button type="button" class="cancel-btn" (click)="cerrarModalCancelacion()">Volver</button>
+        <button type="button" class="confirm-btn confirm-btn-danger" (click)="confirmarCancelacion()">
+          Cancelar cita
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
