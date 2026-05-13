@@ -1,0 +1,15 @@
+CREATE DATABASE peluqueria_far;
+
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    surname VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    mobile_phone VARCHAR(20),
+    password_hash VARCHAR(255),
+    role ENUM('CLIENT','BARBER','ADMIN') NOT NULL,
+    auth_provider ENUM('LOCAL','GOOGLE') NOT NULL,
+    enabled BOOLEAN DEFAULT FALSE,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
