@@ -1,0 +1,168 @@
+<div class="container-fluid px-4 px-lg-5 d-flex justify-content-center align-items-center vh-100">
+  <div class="auth-card shadow-sm border rounded-3 bg-white" style="max-width: 920px; width: 100%;">
+    <div class="p-4">
+      <h2 class="fw-bold mb-4" style="color: #333;">Crear cuenta</h2>
+
+      <div *ngIf="successMessage" class="alert alert-success" role="alert">
+        {{ successMessage }}
+      </div>
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <form #registroForm="ngForm" (ngSubmit)="onSubmit(registroForm)" novalidate>
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <label class="mb-2" style="font-size: 0.9rem;">
+              Nombre
+              <span [style.color]="(submitted || nombreModel.touched) && nombreModel.invalid ? '#dc3545' : '#6c757d'">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Nombre"
+                name="nombre"
+                ngModel
+                required
+                #nombreModel="ngModel"
+                [class.is-invalid]="(submitted || nombreModel.touched) && nombreModel.invalid">
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || nombreModel.touched) && nombreModel.invalid">
+              El nombre es obligatorio.
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="mb-2" style="font-size: 0.9rem;">
+              Apellidos
+              <span [style.color]="(submitted || apellidosModel.touched) && apellidosModel.invalid ? '#dc3545' : '#6c757d'">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Apellidos"
+                name="apellidos"
+                ngModel
+                required
+                #apellidosModel="ngModel"
+                [class.is-invalid]="(submitted || apellidosModel.touched) && apellidosModel.invalid">
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || apellidosModel.touched) && apellidosModel.invalid">
+              Los apellidos son obligatorios.
+            </div>
+          </div>
+        </div>
+
+        <label class="d-block mb-2" style="font-size: 0.9rem;">
+          Email
+          <span [style.color]="(submitted || emailModel.touched) && emailModel.invalid ? '#dc3545' : '#6c757d'">*</span>
+        </label>
+        <div class="input-group">
+          <input
+            type="email"
+            class="form-control"
+            placeholder="Email"
+            name="email"
+            ngModel
+            required
+            email
+            #emailModel="ngModel"
+            [class.is-invalid]="(submitted || emailModel.touched) && emailModel.invalid">
+        </div>
+        <div class="text-danger small mt-1" *ngIf="(submitted || emailModel.touched) && emailModel.errors?.['required']">
+          El email es obligatorio.
+        </div>
+        <div class="text-danger small mt-1" *ngIf="(submitted || emailModel.touched) && emailModel.errors?.['email']">
+          Formato de email no valido.
+        </div>
+
+        <label class="d-block mb-2 mt-3" style="font-size: 0.9rem;">
+          Telefono (opcional)
+        </label>
+        <div class="input-group mb-3">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Telefono (opcional)"
+            name="telefono"
+            ngModel
+            maxlength="9"
+            pattern="^[0-9]{9}$"
+            (keypress)="$event.key.match(/[^0-9]/) && $event.preventDefault()"
+            #telefonoModel="ngModel"
+            [class.is-invalid]="(submitted || telefonoModel.touched) && telefonoModel.invalid">
+        </div>
+        <div class="text-danger small mt-1" *ngIf="(submitted || telefonoModel.touched) && telefonoModel.errors?.['pattern']">
+          El telefono debe tener exactamente 9 digitos.
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-md-6">
+            <label class="mb-2" style="font-size: 0.9rem;">
+              Contraseña
+              <span [style.color]="(submitted || passwordModel.touched) && passwordModel.invalid ? '#dc3545' : '#6c757d'">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="password"
+                class="form-control"
+                placeholder="Contraseña"
+                name="password"
+                ngModel
+                required
+                minlength="4"
+                pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*]).+$"
+                #passwordModel="ngModel"
+                [class.is-invalid]="(submitted || passwordModel.touched) && passwordModel.invalid">
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || passwordModel.touched) && passwordModel.errors?.['required']">
+              La contraseña es obligatoria.
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || passwordModel.touched) && passwordModel.errors?.['pattern']">
+              La contraseña debe contener cuatro caracteres, un número y un carácter especial.
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="mb-2" style="font-size: 0.9rem;">
+              Confirmar contraseña
+              <span [style.color]="(submitted || confirmPasswordModel.touched) && (confirmPasswordModel.invalid || (confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value)) ? '#dc3545' : '#6c757d'">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="password"
+                class="form-control"
+                placeholder="Confirmar contraseña"
+                name="confirmPassword"
+                ngModel
+                required
+                #confirmPasswordModel="ngModel"
+                [class.is-invalid]="(submitted || confirmPasswordModel.touched) && (confirmPasswordModel.invalid || (confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value))">
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || confirmPasswordModel.touched) && confirmPasswordModel.errors?.['required']">
+              Debes confirmar la contraseña.
+            </div>
+            <div class="text-danger small mt-1" *ngIf="(submitted || confirmPasswordModel.touched) && confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value">
+              Las contraseñas no coinciden.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn w-100 py-3 text-white fs-6 fw-medium mb-4"
+          [disabled]="registroForm.invalid || (confirmPasswordModel.value && confirmPasswordModel.value !== passwordModel.value)"
+          style="background-color: #d17871; border: none; border-radius: 6px;">
+          Crear cuenta
+        </button>
+
+        <hr class="mt-4 mb-4 border-secondary opacity-25">
+
+        <div class="text-center mt-3">
+          <span class="text-muted fs-6">Ya tienes cuenta? </span>
+          <a routerLink="/inicio-sesion" class="text-decoration-none fw-bold fs-6" style="color: #6d9cc1;">Iniciar sesion ></a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
