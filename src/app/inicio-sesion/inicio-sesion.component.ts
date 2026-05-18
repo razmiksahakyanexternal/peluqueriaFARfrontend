@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -18,6 +18,7 @@ export class InicioSesionComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -46,11 +47,11 @@ export class InicioSesionComponent implements OnInit {
     }
 
     if (this.route.snapshot.queryParamMap.get('verificationSent') === 'true') {
-      this.successMessage = 'Se ha enviado el correo de verificacion. Revisa tu bandeja de entrada.';
+      this.successMessage = 'Se ha enviado el correo de verificación. Revisa tu bandeja de entrada.';
     }
 
     if (this.route.snapshot.queryParamMap.get('verified') === 'true') {
-      this.successMessage = 'Tu cuenta ha sido verificada. Ya puedes iniciar sesion.';
+      this.successMessage = 'Tu cuenta ha sido verificada. Ya puedes iniciar sesión.';
     }
 
     if (this.authService.isLoggedIn()) {
@@ -63,7 +64,10 @@ export class InicioSesionComponent implements OnInit {
     this.errorMessage = null;
     this.successMessage = null;
 
-    if (form.invalid) {
+    const emailControl = form.controls['email'];
+    const passwordControl = form.controls['password'];
+
+    if (emailControl?.invalid || passwordControl?.errors?.['required']) {
       return;
     }
 
@@ -77,6 +81,7 @@ export class InicioSesionComponent implements OnInit {
           const token = this.authService.extractJwtToken(response);
           if (!token) {
             this.errorMessage = 'Login correcto, pero no se recibio token JWT.';
+            this.cdr.detectChanges();
             return;
           }
 
@@ -89,10 +94,12 @@ export class InicioSesionComponent implements OnInit {
             this.authService.saveSurname(response.surname);
           }
 
-          this.successMessage = 'Inicio de sesion exitoso.';
+          this.successMessage = 'Inicio de sesión exitoso.';
+          this.cdr.detectChanges();
           setTimeout(() => this.router.navigate([this.authService.getRedirectRouteByRole()]), 900);
         },
         error: (err) => {
+          setTimeout(() => this.cdr.detectChanges());
           this.errorMessage = err?.error?.message || 'Email o contraseña incorrectos.';
         },
       });

@@ -26,6 +26,7 @@ export class ReservasComponent implements OnInit {
 
   selectedDate: Date | null = null;
   selectedTime: string | null = null;
+  confirmedAppointmentTime: string | null = null;
 
   citaConfirmada = false;
 
@@ -36,7 +37,7 @@ export class ReservasComponent implements OnInit {
   occupiedHours = new Set<string>();
   workingDays = new Set<DayOfWeek>(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']);
   morningStart = '10:00';
-  morningEnd = '14:00';
+  morningEnd = '13:45';
   afternoonStart = '15:00';
   afternoonEnd = '18:00';
 
@@ -76,7 +77,6 @@ export class ReservasComponent implements OnInit {
 
     this.loadReservationSchedule();
     this.loadMyAppointments(token);
-    this.loadOccupiedHours();
   }
 
   @HostListener('window:focus')
@@ -168,8 +168,6 @@ export class ReservasComponent implements OnInit {
       this.selectedTime = null;
 
       this.loadReservationSchedule();
-
-      this.loadOccupiedHours();
     }
   }
 
@@ -211,18 +209,18 @@ export class ReservasComponent implements OnInit {
 
     if (!this.selectedDate || !this.selectedTime || this.isSubmitting) return;
 
-    if (this.getAppointmentCountForDate(this.selectedDate) >= 2) {
+    if (this.getAppointmentCountForWeek(this.selectedDate) >= 2) {
       this.showMaxAppointmentsModal = true;
       return;
     }
 
     if (!this.availableHours.includes(this.selectedTime)) {
-      this.errorMessage = 'La hora seleccionada no esta dentro del horario del peluquero.';
+      this.errorMessage = 'La hora seleccionada no está dentro del horario del peluquero.';
       return;
     }
 
     if (this.isTimeOccupied(this.selectedTime)) {
-      this.errorMessage = 'La hora seleccionada ya no esta disponible.';
+      this.errorMessage = 'La hora seleccionada ya no está disponible.';
       this.selectedTime = null;
       return;
     }
@@ -234,11 +232,12 @@ export class ReservasComponent implements OnInit {
     const appointmentDate = this.toIsoDate(this.selectedDate);
 
     const startTime = this.selectedTime + ':00';
+    this.confirmedAppointmentTime = this.selectedTime;
 
     const token = this.authService.getToken();
 
     if (!token) {
-      this.errorMessage = 'Debes iniciar sesion para reservar.';
+      this.errorMessage = 'Debes iniciar sesión para reservar.';
       this.isSubmitting = false;
       return;
     }
@@ -264,6 +263,9 @@ export class ReservasComponent implements OnInit {
           }
 
           this.citaConfirmada = true;
+          this.confirmedAppointmentTime = response.startTime
+            ? this.normalizeTimeToHourMinute(response.startTime)
+            : this.confirmedAppointmentTime;
 
           this.successMessage =
             response.message || 'Cita creada correctamente.';
@@ -302,9 +304,20 @@ export class ReservasComponent implements OnInit {
     });
   }
 
-  private getAppointmentCountForDate(date: Date): number {
-    const isoDate = this.toIsoDate(date);
-    return this.myAppointments.filter(appointment => appointment.appointmentDate === isoDate).length;
+  private getAppointmentCountForWeek(date: Date): number {
+    const weekStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayOffset = (weekStart.getDay() + 6) % 7;
+    weekStart.setDate(weekStart.getDate() - dayOffset);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const startIso = this.toIsoDate(weekStart);
+    const endIso = this.toIsoDate(weekEnd);
+
+    return this.myAppointments.filter(appointment =>
+      appointment.appointmentDate >= startIso && appointment.appointmentDate <= endIso
+    ).length;
   }
 
   closeMaxAppointmentsModal(): void {
@@ -322,7 +335,7 @@ export class ReservasComponent implements OnInit {
     if (!token) return;
 
     const confirmDelete = confirm(
-      'Â¿Seguro que quieres cancelar esta cita?'
+      '¿Seguro que quieres cancelar esta cita?'
     );
 
     if (!confirmDelete) return;
@@ -350,7 +363,7 @@ export class ReservasComponent implements OnInit {
   }
 
   // =========================
-  // NAVEGACIÃ“N MES
+  // NAVEGACIÓN MES
   // =========================
 
   nextMonth(): void {
@@ -368,8 +381,6 @@ export class ReservasComponent implements OnInit {
     this.occupiedHours.clear();
 
     this.loadReservationSchedule();
-
-    this.loadOccupiedHours();
   }
 
   previousMonth(): void {
@@ -387,8 +398,6 @@ export class ReservasComponent implements OnInit {
     this.occupiedHours.clear();
 
     this.loadReservationSchedule();
-
-    this.loadOccupiedHours();
   }
 
   // =========================
@@ -464,18 +473,19 @@ export class ReservasComponent implements OnInit {
               1
             );
             this.selectedTime = null;
-            this.loadOccupiedHours();
           }
 
           if (this.selectedTime && !this.availableHours.includes(this.selectedTime)) {
             this.selectedTime = null;
           }
 
+          this.loadOccupiedHours();
           this.cdr.detectChanges();
         },
 
         error: () => {
           this.availableHours = this.buildAvailableHours();
+          this.loadOccupiedHours();
         }
       });
   }
@@ -505,7 +515,7 @@ export class ReservasComponent implements OnInit {
       'FRIDAY'
     ]);
     this.morningStart = this.toHourMinute(schedule.morningStart || '10:00');
-    this.morningEnd = this.toHourMinute(schedule.morningEnd || '14:00');
+    this.morningEnd = this.toHourMinute(schedule.morningEnd || '13:45');
     this.afternoonStart = schedule.afternoonStart ? this.toHourMinute(schedule.afternoonStart) : '';
     this.afternoonEnd = schedule.afternoonEnd ? this.toHourMinute(schedule.afternoonEnd) : '';
   }
@@ -629,10 +639,10 @@ export class ReservasComponent implements OnInit {
       'Domingo',
       'Lunes',
       'Martes',
-      'Miercoles',
+      'Miércoles',
       'Jueves',
       'Viernes',
-      'Sabado'
+      'Sábado'
     ];
 
     const months = [
@@ -658,11 +668,9 @@ export class ReservasComponent implements OnInit {
 
     const year = this.selectedDate.getFullYear();
 
-    const timeText =
-      this.selectedTime
-        ? ` a las ${this.selectedTime}`
-        : '';
+    const time = this.confirmedAppointmentTime || this.selectedTime;
+    const timeText = time ? ` a las ${time} h` : '';
 
-    return `${dayName}, ${day} de ${month} de ${year}${timeText} h`;
+    return `${dayName}, ${day} de ${month} de ${year}${timeText}`;
   }
 }

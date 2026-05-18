@@ -74,17 +74,17 @@
           El email es obligatorio.
         </div>
         <div class="text-danger small mt-1" *ngIf="(submitted || emailModel.touched) && emailModel.errors?.['email']">
-          Formato de email no valido.
+          Formato de email no válido.
         </div>
 
         <label class="d-block mb-2 mt-3" style="font-size: 0.9rem;">
-          Telefono (opcional)
+          Teléfono (opcional)
         </label>
         <div class="input-group mb-3">
           <input
             type="text"
             class="form-control"
-            placeholder="Telefono (opcional)"
+            placeholder="Teléfono (opcional)"
             name="telefono"
             ngModel
             maxlength="9"
@@ -94,7 +94,7 @@
             [class.is-invalid]="(submitted || telefonoModel.touched) && telefonoModel.invalid">
         </div>
         <div class="text-danger small mt-1" *ngIf="(submitted || telefonoModel.touched) && telefonoModel.errors?.['pattern']">
-          El telefono debe tener exactamente 9 digitos.
+          El teléfono debe tener exactamente 9 dígitos.
         </div>
 
         <div class="row g-3 mb-4">
@@ -159,8 +159,8 @@
         <hr class="mt-4 mb-4 border-secondary opacity-25">
 
         <div class="text-center mt-3">
-          <span class="text-muted fs-6">Ya tienes cuenta? </span>
-          <a routerLink="/inicio-sesion" class="text-decoration-none fw-bold fs-6" style="color: #6d9cc1;">Iniciar sesion ></a>
+          <span class="text-muted fs-6">¿Ya tienes cuenta? </span>
+          <a routerLink="/inicio-sesion" class="text-decoration-none fw-bold fs-6" style="color: #6d9cc1;">Iniciar sesión ></a>
         </div>
       </form>
     </div>

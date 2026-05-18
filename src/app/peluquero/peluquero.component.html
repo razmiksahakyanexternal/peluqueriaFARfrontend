@@ -19,7 +19,7 @@
           <span class="eyebrow">Proxima cita</span>
           <strong>{{ nextAppointment.time }}</strong>
           <p>{{ nextAppointment.name }}</p>
-          <small>{{ formattedToday }}</small>
+          <small>{{ nextAppointmentDateText }}</small>
         </div>
 
         <ng-template #noNextAppointment>
@@ -44,28 +44,27 @@
         </div>
 
         <div class="calendar-nav">
-          <button type="button" (click)="viewMode === 'month' ? prevMonth() : prevWeek()">Anterior</button>
+          <button type="button" (click)="goPreviousPeriod()">Anterior</button>
           <button type="button" (click)="goToday()">Hoy</button>
-          <button type="button" (click)="viewMode === 'month' ? nextMonth() : nextWeek()">Siguiente</button>
+          <button type="button" (click)="goNextPeriod()">Siguiente</button>
         </div>
       </header>
 
       <section class="toolbar-row">
         <div class="toolbar-left">
-          <button type="button" class="add-btn" (click)="openBookingModal()">Anadir cita</button>
+          <button type="button" class="add-btn" (click)="openBookingModal()">+ Añadir cita</button>
           <button type="button" class="block-btn block-btn-danger" (click)="openBlockModal()">Bloquear hora</button>
           <button type="button" class="block-btn block-btn-warning" (click)="openWorkingDaysModal()">
-            {{ workingDays.size > 0 ? 'Editar dias' : 'Configurar dias' }}
+            Configurar días
           </button>
         </div>
-        <p class="toolbar-summary">Horario actual: {{ workingHoursText }}</p>
       </section>
 
       <section class="kpi-row">
         <article class="kpi-card" *ngFor="let kpi of kpis">
           <p>{{ kpi.title }}</p>
-          <strong>{{ kpi.value }}</strong>
-          <span>{{ kpi.hint }}</span>
+          <strong [class.schedule-value]="kpi.title === 'Horario actual'">{{ kpi.value }}</strong>
+          <span *ngIf="kpi.hint">{{ kpi.hint }}</span>
         </article>
       </section>
 
@@ -78,8 +77,8 @@
           </div>
 
           <div class="day-nav">
-            <button type="button" (click)="prevDay()">Anterior dia</button>
-            <button type="button" (click)="nextDay()">Siguiente dia</button>
+            <button type="button" (click)="prevDay()">Anterior día</button>
+            <button type="button" (click)="nextDay()">Siguiente día</button>
           </div>
 
           <ng-container *ngFor="let time of timeSlots">
@@ -139,72 +138,104 @@
     </main>
   </div>
 
-  <div class="modal-overlay" *ngIf="showBookingOptions" (click)="closeBookingOptions()">
+  <!-- Pantalla elección tipo de cliente -->
+  <div class="modal-overlay" *ngIf="showBookingOptions" (click)="openBookingModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
-      <header class="modal-header">
-        <h2>Tipo de cliente</h2>
+
+      <header class="modal-header booking-options-header">
+        <h2>TIPO DE CLIENTE PARA AÑADIR CITA</h2>
+        <button type="button" class="close-btn" (click)="closeBookingOptions()">x</button>
       </header>
 
       <div class="option-buttons">
-        <button type="button" (click)="openRegisteredBooking()">Cliente registrado</button>
-        <button type="button" (click)="openUnregisteredBooking()">Cliente no registrado</button>
+        <button type="button" (click)="openRegisteredBooking()">
+          Cliente registrado
+        </button>
+
+        <button type="button" (click)="openUnregisteredBooking()">
+          Cliente no registrado
+        </button>
       </div>
+
     </div>
   </div>
 
+  <!-- Reserva -->
   <div class="modal-overlay" *ngIf="showBookingModal" (click)="closeBookingModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-content booking-modal-content" (click)="$event.stopPropagation()">
+
       <header class="modal-header">
-        <h2>Reservar cita</h2>
-        <button type="button" class="close-btn" (click)="closeBookingModal()">x</button>
+        <h2>Reservar Cita</h2>
+        <button type="button" class="close-btn" (click)="closeBookingModal()">×</button>
       </header>
 
       <form class="booking-form" (ngSubmit)="bookAppointment()">
-        <div class="feedback error" *ngIf="bookingErrorMessage">{{ bookingErrorMessage }}</div>
         <div class="feedback success" *ngIf="bookingSuccessMessage">{{ bookingSuccessMessage }}</div>
+        <div class="feedback error" *ngIf="bookingErrorMessage">{{ bookingErrorMessage }}</div>
 
-        <div class="form-group">
-          <label>Fecha</label>
-          <input type="date" [(ngModel)]="bookingDate" name="bookingDate" (ngModelChange)="onBookingDateChange()" required>
+        <!-- FECHA -->
+        <div class="form-group" [class.error]="submitted && dateError">
+          <label for="bookingDate">Fecha <span class="required-asterisk">*</span></label>
+          <input type="date" id="bookingDate" [(ngModel)]="bookingDate" name="bookingDate" [min]="todayIso" (change)="onBookingDateChange()" [class.error-input]="submitted && dateError">
+          <p class="error-message" *ngIf="submitted && dateError">{{ dateError }}</p>
         </div>
 
-        <div class="form-group">
-          <label>Hora</label>
-          <select [(ngModel)]="bookingTime" name="bookingTime" required>
+        <!-- HORA -->
+        <div class="form-group" [class.error]="submitted && (!bookingTime || timeError)">
+          <label for="bookingTime">Hora <span class="required-asterisk">*</span></label>
+          <select id="bookingTime" [(ngModel)]="bookingTime" name="bookingTime" [class.error-input]="submitted && (!bookingTime || timeError)">
             <option value="">Seleccionar hora</option>
-            <option *ngFor="let slot of timeSlots" [value]="slot" [disabled]="isBookingSlotUnavailable(slot)">
-              {{ slot }}{{ isBookingTimeBlocked(slot) ? ' - bloqueado' : '' }}{{ isBookingTimeOccupied(slot) ? ' - ocupado' : '' }}
+            <option *ngFor="let slot of bookingTimeSlots" [value]="slot" [disabled]="isBookingSlotUnavailable(slot)">
+              {{ getBookingSlotLabel(slot) }}
             </option>
           </select>
+          <p class="error-message" *ngIf="submitted && timeError">{{ timeError }}</p>
         </div>
 
-        <div class="form-group" *ngIf="clientType === 'registered'">
-          <label>Buscar cliente</label>
-          <input type="text" [ngModel]="userSearchQuery" name="userSearchQuery" (input)="onUserSearch($event)" autocomplete="off">
-          <div class="suggestions" *ngIf="showUserSuggestions && userSuggestions.length > 0">
-            <button type="button" *ngFor="let user of userSuggestions" (click)="selectUser(user)">
-              {{ user.name }} {{ user.surname }} - {{ user.email }}
-            </button>
+        <!-- CLIENTE REGISTRADO -->
+        <div class="client-fields" *ngIf="clientType === 'registered'">
+          <!-- buscador -->
+          <div class="form-group autocomplete-group" [class.error]="submitted && !selectedUserId">
+            <label for="userSearch">Cliente Registrado <span class="required-asterisk">*</span></label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="userSearch" [(ngModel)]="userSearchQuery" name="userSearch" (input)="onUserSearch($event)" (blur)="onBlurUser()" (focus)="onFocusUser()" placeholder="Busca el usuario por sus apellidos..." [class.error-input]="submitted && !selectedUserId" [readonly]="!!selectedUserId" autocomplete="off">
+              <button type="button" class="clear-search-btn" *ngIf="userSearchQuery || selectedUserId" (click)="clearUser()">×</button>
+            </div>
+            <ul class="suggestions-list" *ngIf="showUserSuggestions">
+              <li *ngFor="let user of userSuggestions" (pointerdown)="$event.preventDefault(); selectUser(user)">{{ user.name }} {{ user.surname }} ({{ user.email }})</li>
+            </ul>
+            <p class="error-message" *ngIf="submitted && !selectedUserId">{{ guestNameError }}</p>
           </div>
-          <button type="button" class="ghost-btn" *ngIf="selectedUserId" (click)="clearUser()">Quitar cliente</button>
+
+          <!-- AUTO-NOMBRE CLIENTE -->
+          <div class="form-group">
+            <label for="guestName">Nombre del Cliente</label>
+            <input type="text" id="guestName" [(ngModel)]="guestName" name="guestName" readonly>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label>Nombre cliente</label>
-          <input type="text" [(ngModel)]="guestName" name="guestName" required>
+        <!-- CLIENTE NO REGISTRADO -->
+        <div class="client-fields" *ngIf="clientType === 'unregistered'">
+          <div class="form-group" [class.error]="submitted && !guestName">
+            <label>Nombre del cliente <span class="required-asterisk">*</span></label>
+            <input type="text" [(ngModel)]="guestName" name="guestName" placeholder="Nombre completo del cliente" [class.error-input]="submitted && !guestName">
+            <p class="error-message" *ngIf="submitted && !guestName">El nombre es obligatorio</p>
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" [(ngModel)]="guestPhone" name="guestPhone" placeholder="Número de teléfono" maxlength="9" pattern="^[0-9]{1,9}$" inputmode="numeric" (keypress)="blockNonNumericPhoneInput($event)" (paste)="blockInvalidPhonePaste($event)">
+          </div>
         </div>
 
-        <div class="form-group">
-          <label>Telefono</label>
-          <input type="text" [(ngModel)]="guestPhone" name="guestPhone" maxlength="8" inputmode="numeric">
-        </div>
-
+        <!-- ACCIONES -->
         <div class="form-actions">
           <button type="button" class="cancel-btn" (click)="closeBookingModal()">Cancelar</button>
-          <button type="submit" class="confirm-btn">
-            Confirmar
+          <button type="button" class="confirm-btn" (click)="bookAppointment()" [disabled]="isBookingAppointment">
+            {{ isBookingAppointment ? 'Reservando...' : 'Confirmar Reserva' }}
           </button>
         </div>
+
       </form>
     </div>
   </div>
@@ -214,7 +245,7 @@
       <header class="modal-header">
         <div>
           <h2>{{ editingBlockedSlotId ? 'Editar bloqueo' : 'Bloquear horario' }}</h2>
-          <p class="modal-subtitle">Marca tramos no disponibles o bloquea el dia completo.</p>
+          <p class="modal-subtitle">Marca tramos no disponibles o bloquea el día completo.</p>
         </div>
         <button type="button" class="close-btn" (click)="closeBlockModal()">x</button>
       </header>
@@ -225,13 +256,13 @@
 
         <div class="form-group">
           <label>Fecha</label>
-          <input type="date" [(ngModel)]="blockDate" name="blockDate" required>
+          <input type="date" [(ngModel)]="blockDate" name="blockDate" [min]="todayIso" required>
         </div>
 
         <div class="form-group">
           <label class="checkbox-row">
             <input type="checkbox" [(ngModel)]="blockAllDay" name="blockAllDay">
-            <span>Bloquear dia completo</span>
+            <span>Bloquear día completo</span>
           </label>
         </div>
 
@@ -260,7 +291,7 @@
       </form>
 
       <section class="blocked-list" *ngIf="blockedSlotsForSelectedDate.length > 0">
-        <h3>Bloqueos del dia</h3>
+        <h3>Bloqueos del día</h3>
         <div class="blocked-row" *ngFor="let slot of blockedSlotsForSelectedDate">
           <div class="blocked-row__info">
             <span class="blocked-pill">{{ slot.allDay ? 'Dia completo' : 'Horario' }}</span>
@@ -283,7 +314,7 @@
       <header class="modal-header">
         <div>
           <h2>Dias laborables</h2>
-          <p class="modal-subtitle">Elige los dias en los que la agenda acepta citas.</p>
+          <p class="modal-subtitle">Elige los días en los que la agenda acepta citas.</p>
         </div>
         <button type="button" class="close-btn" (click)="closeWorkingDaysModal()">x</button>
       </header>
@@ -313,11 +344,11 @@
               <div class="schedule-inputs">
                 <div class="form-group">
                   <label>Inicio</label>
-                  <input type="time" [(ngModel)]="morningStart" name="morningStart" required>
+                  <input type="time" [(ngModel)]="morningStart" name="morningStart" [min]="morningMin" [max]="morningMax" step="900" required>
                 </div>
                 <div class="form-group">
                   <label>Fin</label>
-                  <input type="time" [(ngModel)]="morningEnd" name="morningEnd" required>
+                  <input type="time" [(ngModel)]="morningEnd" name="morningEnd" [min]="morningMin" [max]="morningMax" step="900" required>
                 </div>
               </div>
             </div>
@@ -327,11 +358,11 @@
               <div class="schedule-inputs">
                 <div class="form-group">
                   <label>Inicio</label>
-                  <input type="time" [(ngModel)]="afternoonStart" name="afternoonStart">
+                  <input type="time" [(ngModel)]="afternoonStart" name="afternoonStart" [min]="afternoonMin" [max]="afternoonMax" step="900">
                 </div>
                 <div class="form-group">
                   <label>Fin</label>
-                  <input type="time" [(ngModel)]="afternoonEnd" name="afternoonEnd">
+                  <input type="time" [(ngModel)]="afternoonEnd" name="afternoonEnd" [min]="afternoonMin" [max]="afternoonMax" step="900">
                 </div>
               </div>
             </div>

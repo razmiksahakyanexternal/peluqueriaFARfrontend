@@ -110,7 +110,7 @@ export class MisCitasComponent implements OnInit {
   formatAppointmentDate(isoDate: string): string {
     const [year, month, day] = isoDate.split('-').map(Number);
     const date = new Date(year, month - 1, day);
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     return `${days[date.getDay()]} ${day} de ${months[month - 1]} de ${year}`;
   }

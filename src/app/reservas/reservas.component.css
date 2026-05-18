@@ -153,8 +153,28 @@
 }
 
 .confirmation-content {
-  padding: 2rem 1.5rem;
+  padding: 2.2rem 1.5rem 2rem;
   text-align: center;
+}
+
+.confirmation-check {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.15rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #789487;
+  color: #ffffff;
+  font-size: 2.35rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.confirmation-content h1 {
+  margin: 0 0 1rem;
+  font-size: 1.9rem;
+  color: #2f3338;
 }
 
 .error-copy {
@@ -168,6 +188,13 @@
 .confirmation-date {
   margin: 0;
   color: #8190a1;
+}
+
+.confirmation-date {
+  margin-bottom: 1.8rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #3f444a;
 }
 
 .modal-overlay {
@@ -207,12 +234,35 @@
   max-width: 420px;
 }
 
+.max-appointments-modal {
+  border-radius: 12px;
+}
+
 .modal-header {
   position: relative;
   padding: 1.5rem 1.5rem 0.9rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.max-appointments-modal .modal-header {
+  align-items: center;
+  padding: 2rem 1.5rem 0.75rem;
+  text-align: center;
+  gap: 0.9rem;
+}
+
+.modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eef4f1;
+  color: #5d7f72;
+  font-size: 1.8rem;
+  font-weight: 800;
 }
 
 .modal-header h2 {
@@ -228,6 +278,11 @@
   font-size: 0.95rem;
   line-height: 1.5;
   color: #6b7280;
+}
+
+.max-appointments-modal .modal-subtitle {
+  max-width: 320px;
+  margin-top: 0.55rem;
 }
 
 .modal-x {
@@ -267,6 +322,10 @@
   padding: 1.25rem 1.5rem 1.5rem;
   display: flex;
   justify-content: flex-end;
+}
+
+.max-appointments-modal .confirm-actions {
+  padding-top: 1rem;
 }
 
 .confirm-actions .cancel-btn {

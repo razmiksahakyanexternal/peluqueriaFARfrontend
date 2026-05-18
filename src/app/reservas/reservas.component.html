@@ -1,13 +1,10 @@
 <div class="reservas-container">
   <div class="reservas-card" *ngIf="citaConfirmada; else formularioReserva">
     <div class="confirmation-content">
-      <div class="checkmark">OK</div>
+      <div class="confirmation-check" aria-hidden="true">✓</div>
       <h1>Cita Confirmada</h1>
-      <p class="confirmation-user">Bienvenido, {{ authService.getFullName() }}.</p>
       <p class="confirmation-date">{{ getFormattedDate() }}</p>
-      <p class="confirmation-note" *ngIf="successMessage">{{ successMessage }}</p>
       <button type="button" class="volver-btn" (click)="volverAlInicio()">Volver al Inicio</button>
-      <p class="confirmation-note">Te hemos enviado un email con la informacion de tu cita. Te esperamos.</p>
     </div>
   </div>
 
@@ -77,20 +74,21 @@
 
         <p class="error-copy" *ngIf="errorMessage">{{ errorMessage }}</p>
 
-        <p class="note">Solo se muestran los dias y horas disponibles del peluquero. Cada cita dura 15 minutos.</p>
+        <p class="note">Solo se muestran los días y horas disponibles del peluquero. Cada cita dura 15 minutos.</p>
       </div>
     </div>
   </ng-template>
 
   <div class="modal-overlay" *ngIf="showMaxAppointmentsModal" (click)="closeMaxAppointmentsModal()">
-    <div class="modal-content modal-content-sm" (click)="$event.stopPropagation()">
+    <div class="modal-content modal-content-sm max-appointments-modal" (click)="$event.stopPropagation()">
 
       <header class="modal-header">
         <button class="modal-x" (click)="closeMaxAppointmentsModal()" aria-label="Cerrar">×</button>
 
+        <div class="modal-icon" aria-hidden="true">!</div>
         <div>
           <h2>Ya has reservado 2 citas</h2>
-          <p class="modal-subtitle">No puedes reservar más citas para ese día.</p>
+          <p class="modal-subtitle">Solo se puede reservar un máximo de 2 citas por semana para un mismo cliente.</p>
         </div>
       </header>
 

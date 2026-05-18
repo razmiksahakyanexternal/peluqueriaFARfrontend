@@ -64,9 +64,13 @@ export class PeluqueroComponent implements OnInit {
   workingDays = new Set<DayOfWeek>();
   workingDaysDraft = new Set<DayOfWeek>();
   morningStart = '10:00';
-  morningEnd = '14:00';
+  morningEnd = '13:45';
   afternoonStart = '15:00';
   afternoonEnd = '18:00';
+  readonly morningMin = '08:00';
+  readonly morningMax = '13:45';
+  readonly afternoonMin = '14:00';
+  readonly afternoonMax = '20:45';
   showWorkingDaysModal = false;
   workingDaysError: string | null = null;
   workingDaysSuccess: string | null = null;
@@ -83,11 +87,18 @@ export class PeluqueroComponent implements OnInit {
   bookingErrorMessage: string | null = null;
   bookingSuccessMessage: string | null = null;
   isBookingAppointment = false;
+  bookingOccupiedTimes = new Set<string>();
 
   users: UserItem[] = [];
   userSearchQuery = '';
   userSuggestions: UserItem[] = [];
   showUserSuggestions = false;
+
+  // Validacion de formulario
+  submitted = false;
+  dateError = '';
+  timeError = '';
+  guestNameError = '';
 
   showBlockModal = false;
   blockDate = '';
@@ -115,12 +126,19 @@ export class PeluqueroComponent implements OnInit {
   readonly workingDayOptions: Array<{ value: DayOfWeek; label: string }> = [
     { value: 'MONDAY', label: 'Lunes' },
     { value: 'TUESDAY', label: 'Martes' },
-    { value: 'WEDNESDAY', label: 'Miercoles' },
+    { value: 'WEDNESDAY', label: 'Miércoles' },
     { value: 'THURSDAY', label: 'Jueves' },
     { value: 'FRIDAY', label: 'Viernes' },
-    { value: 'SATURDAY', label: 'Sabado' },
+    { value: 'SATURDAY', label: 'Sábado' },
     { value: 'SUNDAY', label: 'Domingo' },
   ];
+  private readonly defaultWorkingDays = new Set<DayOfWeek>([
+    'MONDAY',
+    'TUESDAY',
+    'WEDNESDAY',
+    'THURSDAY',
+    'FRIDAY',
+  ]);
 
   constructor(
     private authService: AuthService,
@@ -147,6 +165,9 @@ export class PeluqueroComponent implements OnInit {
       this.buildMonth();
     } else {
       this.updateCalendar();
+      if (mode === 'day') {
+        this.selectTodayInCurrentWeek();
+      }
     }
   }
 
@@ -171,6 +192,30 @@ export class PeluqueroComponent implements OnInit {
   prevMonth(): void {
     this.currentMonthOffset--;
     this.buildMonth();
+  }
+
+  goPreviousPeriod(): void {
+    if (this.viewMode === 'month') {
+      this.prevMonth();
+      return;
+    }
+    if (this.viewMode === 'day') {
+      this.prevDay();
+      return;
+    }
+    this.prevWeek();
+  }
+
+  goNextPeriod(): void {
+    if (this.viewMode === 'month') {
+      this.nextMonth();
+      return;
+    }
+    if (this.viewMode === 'day') {
+      this.nextDay();
+      return;
+    }
+    this.nextWeek();
   }
 
   goToday(): void {
@@ -257,29 +302,50 @@ export class PeluqueroComponent implements OnInit {
 
   openBookingModal(): void {
     this.showBookingOptions = true;
+    this.showBookingModal = false;
+
+    // Reset básico
     this.bookingDate = this.toLocalDate(new Date());
     this.bookingTime = '';
+    this.selectedUserId = null;
     this.guestName = '';
     this.guestPhone = '';
-    this.selectedUserId = null;
+    this.bookingErrorMessage = null;
+    this.bookingSuccessMessage = null;
+
     this.userSearchQuery = '';
     this.userSuggestions = [];
     this.showUserSuggestions = false;
-    this.bookingErrorMessage = null;
-    this.bookingSuccessMessage = null;
-    this.isBookingAppointment = false;
+    this.submitted = false;
+    this.dateError = '';
+    this.timeError = '';
+    this.guestNameError = '';
   }
 
   openRegisteredBooking(): void {
     this.clientType = 'registered';
     this.showBookingOptions = false;
     this.showBookingModal = true;
+    this.bookingErrorMessage = null;
+    this.bookingSuccessMessage = null;
+    this.submitted = false;
+    this.dateError = '';
+    this.timeError = '';
+    this.guestNameError = '';
+    this.loadBookingOccupiedTimes();
   }
 
   openUnregisteredBooking(): void {
     this.clientType = 'unregistered';
     this.showBookingOptions = false;
     this.showBookingModal = true;
+    this.bookingErrorMessage = null;
+    this.bookingSuccessMessage = null;
+    this.submitted = false;
+    this.dateError = '';
+    this.timeError = '';
+    this.guestNameError = '';
+    this.loadBookingOccupiedTimes();
   }
 
   closeBookingModal(): void {
@@ -296,74 +362,82 @@ export class PeluqueroComponent implements OnInit {
 
   onBookingDateChange(): void {
     this.bookingErrorMessage = null;
+    this.loadBookingOccupiedTimes();
     if (this.bookingTime && this.isBookingSlotUnavailable(this.bookingTime)) {
       this.bookingTime = '';
     }
   }
 
   bookAppointment(): void {
+    this.submitted = true;
+    this.bookingErrorMessage = null;
+    this.bookingSuccessMessage = null;
+    this.dateError = '';
+    this.timeError = '';
+    this.guestNameError = '';
+
     if (this.isBookingAppointment) {
       return;
     }
 
-    this.bookingErrorMessage = null;
-    this.bookingSuccessMessage = null;
+    let hasValidationError = false;
 
-    const guestName = this.guestName.trim();
-    const guestPhone = this.guestPhone.trim();
+    const isNonWorkingBookingDate = !!this.bookingDate && this.isNonWorkingDate(this.bookingDate);
 
+    // Validar fecha
     if (!this.bookingDate) {
-      this.bookingErrorMessage = 'Selecciona una fecha.';
-      return;
+      this.dateError = 'La fecha es obligatoria';
+      hasValidationError = true;
+    } else if (this.isPastDate(this.bookingDate)) {
+      this.dateError = 'No se puede reservar en una fecha anterior a hoy';
+      hasValidationError = true;
+    } else if (isNonWorkingBookingDate) {
+      this.dateError = 'No se puede reservar una cita fuera de los días laborables del peluquero';
+      this.bookingErrorMessage = this.dateError;
+      hasValidationError = true;
     }
 
-    if (this.isPastDate(this.bookingDate)) {
-      this.bookingErrorMessage = 'No se puede reservar una cita en una fecha anterior a hoy.';
-      return;
-    }
-
-    if (this.isNonWorkingDate(this.bookingDate)) {
-      this.bookingErrorMessage = 'Ese dia esta marcado como no laborable.';
-      return;
-    }
-
+    // Validar hora
     if (!this.bookingTime) {
-      this.bookingErrorMessage = 'Selecciona una hora.';
+      this.timeError = 'La hora es obligatoria';
+      hasValidationError = true;
+    } else if (isNonWorkingBookingDate) {
+      this.timeError = 'No disponible en un día no laborable';
+      hasValidationError = true;
+    } else if (this.isBookingTimeBlocked(this.bookingTime)) {
+      this.timeError = 'Esta hora está bloqueada';
+      this.bookingErrorMessage = 'No se puede reservar una cita en un horario bloqueado';
+      hasValidationError = true;
+    } else if (this.isBookingTimeOccupied(this.bookingTime)) {
+      this.timeError = 'Esta hora ya tiene una cita';
+      this.bookingErrorMessage = 'Ya existe una cita en esa franja horaria';
+      hasValidationError = true;
+    } else if (this.isPastDateTime(this.bookingDate, this.bookingTime)) {
+      this.timeError = 'Selecciona una hora disponible';
+      this.bookingErrorMessage = 'No se puede reservar en una hora que ya ha pasado';
+      hasValidationError = true;
+    }
+
+    // Validar según tipo de cliente
+    if (this.clientType === 'registered') {
+      if (!this.selectedUserId) {
+        this.guestNameError = 'Selecciona un cliente de la lista';
+        hasValidationError = true;
+      }
+    } else if (this.clientType === 'unregistered') {
+      if (!this.guestName.trim()) {
+        this.guestNameError = 'El nombre del cliente es obligatorio';
+        hasValidationError = true;
+      }
+    }
+
+    if (hasValidationError) {
       return;
     }
 
-    if (!guestName) {
-      this.bookingErrorMessage = 'Introduce el nombre del cliente.';
-      return;
-    }
-
-    if (this.clientType === 'registered' && !this.selectedUserId) {
-      this.bookingErrorMessage = 'Selecciona un cliente registrado de la lista.';
-      return;
-    }
-
-    if (guestPhone && !/^\d{1,8}$/.test(guestPhone)) {
-      this.bookingErrorMessage = 'El telefono debe tener entre 1 y 8 digitos.';
-      return;
-    }
-
-    if (!this.timeSlots.includes(this.bookingTime)) {
-      this.bookingErrorMessage = 'La hora seleccionada no esta dentro del horario configurado.';
-      return;
-    }
-
-    if (this.isPastDateTime(this.bookingDate, this.bookingTime)) {
-      this.bookingErrorMessage = 'No se puede reservar una cita en una hora pasada.';
-      return;
-    }
-
-    if (this.isBookingTimeBlocked(this.bookingTime)) {
-      this.bookingErrorMessage = 'No se puede reservar una cita en un horario bloqueado.';
-      return;
-    }
-
-    if (this.isBookingTimeOccupied(this.bookingTime)) {
-      this.bookingErrorMessage = 'Ya existe una cita en esa franja horaria.';
+    // Validar teléfono si se proporciona
+    if (this.guestPhone && !/^\d{1,9}$/.test(this.guestPhone.trim())) {
+      this.bookingErrorMessage = 'El teléfono debe contener solo números y tener como máximo 9 dígitos';
       return;
     }
 
@@ -377,14 +451,15 @@ export class PeluqueroComponent implements OnInit {
 
     this.reservasApiService.createAppointment({
       appointmentDate: this.bookingDate,
-      startTime: `${this.bookingTime}:00`,
-      guestName,
-      guestPhone: guestPhone || undefined,
-      userId: this.selectedUserId,
+      startTime: this.appendSeconds(this.bookingTime),
+      guestName: this.guestName.trim(),
+      guestPhone: this.guestPhone.trim() || undefined,
+      userId: this.clientType === 'registered' ? this.selectedUserId : undefined,
     }, token).subscribe({
       next: () => {
-        this.bookingSuccessMessage = 'Cita reservada correctamente.';
+        this.bookingSuccessMessage = 'Cita reservada correctamente';
         this.isBookingAppointment = false;
+        this.submitted = false;
         this.loadAppointments();
         this.cdr.detectChanges();
         setTimeout(() => {
@@ -393,19 +468,21 @@ export class PeluqueroComponent implements OnInit {
         }, 700);
       },
       error: (error) => {
-        this.bookingErrorMessage = error?.error?.message || 'Error al reservar cita.';
+        this.bookingErrorMessage = this.getApiErrorMessage(error, 'Error al reservar cita');
         this.isBookingAppointment = false;
+        this.cdr.detectChanges();
       },
     });
   }
 
-  onUserSearch(event: Event): void {
-    const value = (event.target as HTMLInputElement).value.trim();
-    this.userSearchQuery = value;
-    this.selectedUserId = null;
-    if (!value) {
+  onUserSearch(event: any): void {
+    const query = (event.target?.value || '').trim();
+    this.userSearchQuery = query;
+
+    if (!query) {
       this.userSuggestions = [];
       this.showUserSuggestions = false;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -414,23 +491,28 @@ export class PeluqueroComponent implements OnInit {
       return;
     }
 
-    this.reservasApiService.searchUsers(value, token).subscribe({
+    this.reservasApiService.searchUsers(query, token).subscribe({
       next: (users) => {
         this.userSuggestions = users;
-        this.showUserSuggestions = true;
+        this.showUserSuggestions = users.length > 0;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.userSuggestions = [];
         this.showUserSuggestions = false;
+        this.cdr.detectChanges();
       },
     });
   }
 
   selectUser(user: UserItem): void {
     this.selectedUserId = user.id;
-    this.guestName = `${user.name} ${user.surname}`.trim();
+    this.guestName = `${user.name} ${user.surname}`;
     this.userSearchQuery = user.email;
+    this.userSuggestions = [];
     this.showUserSuggestions = false;
+    this.guestNameError = '';
+    this.cdr.detectChanges();
   }
 
   clearUser(): void {
@@ -439,20 +521,48 @@ export class PeluqueroComponent implements OnInit {
     this.userSearchQuery = '';
     this.userSuggestions = [];
     this.showUserSuggestions = false;
+    this.cdr.detectChanges();
+  }
+
+  blockNonNumericPhoneInput(event: KeyboardEvent): void {
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  blockInvalidPhonePaste(event: ClipboardEvent): void {
+    const pastedText = event.clipboardData?.getData('text') || '';
+    const currentValue = this.guestPhone || '';
+    const input = event.target as HTMLInputElement;
+    const selectionStart = input.selectionStart ?? currentValue.length;
+    const selectionEnd = input.selectionEnd ?? currentValue.length;
+    const nextValue = currentValue.slice(0, selectionStart) + pastedText + currentValue.slice(selectionEnd);
+
+    if (!/^\d{0,9}$/.test(nextValue)) {
+      event.preventDefault();
+    }
+  }
+
+  onBlurUser(): void {
+    setTimeout(() => {
+      this.showUserSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  onFocusUser(): void {
+    if (this.userSearchQuery) {
+      this.showUserSuggestions = this.userSuggestions.length > 0;
+      this.cdr.detectChanges();
+    }
   }
 
   prevDay(): void {
-    const index = this.calendarDays.findIndex(day => day.iso === this.selectedDay?.iso);
-    if (index > 0) {
-      this.selectedDay = this.calendarDays[index - 1];
-    }
+    this.moveSelectedDay(-1);
   }
 
   nextDay(): void {
-    const index = this.calendarDays.findIndex(day => day.iso === this.selectedDay?.iso);
-    if (index >= 0 && index < this.calendarDays.length - 1) {
-      this.selectedDay = this.calendarDays[index + 1];
-    }
+    this.moveSelectedDay(1);
   }
 
   cancelAppointment(id: number): void {
@@ -487,7 +597,12 @@ export class PeluqueroComponent implements OnInit {
 
   openBlockModal(): void {
     this.showBlockModal = true;
-    this.blockDate = this.selectedDay?.iso || this.currentRange?.start || this.toLocalDate(new Date());
+    const today = this.todayIso;
+    const selectedDate = this.selectedDay?.iso || this.currentRange?.start || today;
+    
+    // Si la fecha seleccionada está en el pasado, usar hoy
+    this.blockDate = selectedDate < today ? today : selectedDate;
+    
     this.blockAllDay = false;
     this.blockStartTime = '';
     this.blockEndTime = '';
@@ -584,7 +699,7 @@ export class PeluqueroComponent implements OnInit {
 
     this.openConfirmModal({
       title: 'Eliminar bloqueo',
-      message: 'Ese tramo volvera a estar disponible para gestionar citas.',
+      message: 'Ese tramo volverá a estar disponible para gestionar citas.',
       actionLabel: 'Eliminar bloqueo',
       tone: 'danger',
       onConfirm: () => {
@@ -634,6 +749,9 @@ export class PeluqueroComponent implements OnInit {
   }
 
   saveWorkingDays(): void {
+    this.workingDaysError = null;
+    this.workingDaysSuccess = null;
+
     const token = this.authService.getToken();
     if (!token) {
       this.workingDaysError = 'No autenticado';
@@ -642,17 +760,28 @@ export class PeluqueroComponent implements OnInit {
 
     const days = Array.from(this.workingDaysDraft);
     if (days.length === 0) {
-      this.workingDaysError = 'Debes seleccionar al menos un dia laborable';
+      this.workingDaysError = 'Debes seleccionar al menos un día laborable';
       return;
     }
 
     if (!this.morningStart || !this.morningEnd) {
-      this.workingDaysError = 'Completa el horario de la manana.';
+      this.workingDaysError = 'Completa el horario de la mañana.';
+      return;
+    }
+
+    if (!this.isQuarterHour(this.morningStart) || !this.isQuarterHour(this.morningEnd)) {
+      this.workingDaysError = 'El horario de mañana debe ir de 15 en 15 minutos.';
+      return;
+    }
+
+    if (!this.isTimeInsideLimits(this.morningStart, this.morningMin, this.morningMax)
+      || !this.isTimeInsideLimits(this.morningEnd, this.morningMin, this.morningMax)) {
+      this.workingDaysError = 'La mañana debe estar entre 08:00 y 13:45.';
       return;
     }
 
     if (this.toMinutes(this.morningStart) >= this.toMinutes(this.morningEnd)) {
-      this.workingDaysError = 'La manana debe tener una hora de inicio anterior a la de fin.';
+      this.workingDaysError = 'La mañana debe tener una hora de inicio anterior a la de fin.';
       return;
     }
 
@@ -663,13 +792,24 @@ export class PeluqueroComponent implements OnInit {
         return;
       }
 
+      if (!this.isQuarterHour(this.afternoonStart) || !this.isQuarterHour(this.afternoonEnd)) {
+        this.workingDaysError = 'El horario de tarde debe ir de 15 en 15 minutos.';
+        return;
+      }
+
+      if (!this.isTimeInsideLimits(this.afternoonStart, this.afternoonMin, this.afternoonMax)
+        || !this.isTimeInsideLimits(this.afternoonEnd, this.afternoonMin, this.afternoonMax)) {
+        this.workingDaysError = 'La tarde debe estar entre 14:00 y 20:45.';
+        return;
+      }
+
       if (this.toMinutes(this.afternoonStart) >= this.toMinutes(this.afternoonEnd)) {
         this.workingDaysError = 'La tarde debe tener una hora de inicio anterior a la de fin.';
         return;
       }
 
       if (this.toMinutes(this.afternoonStart) < this.toMinutes(this.morningEnd)) {
-        this.workingDaysError = 'La tarde debe empezar despues de la manana.';
+        this.workingDaysError = 'La tarde debe empezar después de la mañana.';
         return;
       }
     }
@@ -683,6 +823,7 @@ export class PeluqueroComponent implements OnInit {
       afternoonEnd: this.afternoonEnd ? this.appendSeconds(this.afternoonEnd) : null,
     }, token).subscribe({
       next: (response) => {
+        this.workingDaysError = null;
         this.workingDays = new Set(response.workingDays ?? days);
         this.workingDaysDraft = new Set(this.workingDays);
         this.morningStart = this.toHourMinute(response.morningStart || this.morningStart);
@@ -697,7 +838,8 @@ export class PeluqueroComponent implements OnInit {
         setTimeout(() => this.closeWorkingDaysModal(), 700);
       },
       error: (error) => {
-        this.workingDaysError = error?.error?.message || 'Error al guardar dias laborables';
+        this.workingDaysSuccess = null;
+        this.workingDaysError = error?.error?.message || 'Error al guardar días laborables';
         this.isSavingWorkingDays = false;
       },
     });
@@ -725,24 +867,44 @@ export class PeluqueroComponent implements OnInit {
       return false;
     }
 
-    return (this.appointmentsByDay[this.bookingDate] || []).some(appointment => appointment.time === time);
+    return this.bookingOccupiedTimes.has(time)
+      || (this.appointmentsByDay[this.bookingDate] || []).some(appointment => appointment.time === time);
   }
 
   isBookingSlotUnavailable(time: string): boolean {
-    return this.isNonWorkingDate(this.bookingDate)
-      || this.isBookingTimeBlocked(time)
-      || this.isBookingTimeOccupied(time)
-      || this.isPastDateTime(this.bookingDate, time);
+    return this.getBookingSlotUnavailableReason(time) !== '';
+  }
+
+  getBookingSlotLabel(time: string): string {
+    const reason = this.getBookingSlotUnavailableReason(time);
+    return reason ? `${time} - ${reason}` : time;
+  }
+
+  getBookingSlotUnavailableReason(time: string): string {
+    if (this.isNonWorkingDate(this.bookingDate)) {
+      return 'Día no laborable';
+    }
+    if (this.isBookingTimeBlocked(time)) {
+      return 'Bloqueado';
+    }
+    if (this.isBookingTimeOccupied(time)) {
+      return 'Ocupado';
+    }
+    if (this.isPastDateTime(this.bookingDate, time)) {
+      return 'Hora pasada';
+    }
+    return '';
   }
 
   isNonWorkingDate(isoDate: string): boolean {
-    if (!isoDate || this.workingDays.size === 0) {
+    if (!isoDate) {
       return false;
     }
 
     const map: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
     const day = new Date(`${isoDate}T00:00:00`).getDay();
-    return !this.workingDays.has(map[day]);
+    const workingDays = this.workingDays.size > 0 ? this.workingDays : this.defaultWorkingDays;
+    return !workingDays.has(map[day]);
   }
 
   get blockedSlotsForSelectedDate(): BlockedSlotItem[] {
@@ -766,12 +928,33 @@ export class PeluqueroComponent implements OnInit {
   }
 
   get calendarTitle(): string {
-    const base = new Date();
-    if (this.viewMode === 'month') {
-      base.setMonth(base.getMonth() + this.currentMonthOffset);
-    } else {
-      base.setDate(base.getDate() + this.currentWeekOffset * 7);
+    if (this.viewMode === 'day') {
+      const iso = this.selectedDay?.iso || this.todayIso;
+      return new Date(`${iso}T00:00:00`).toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
     }
+
+    if (this.viewMode === 'week' && this.calendarDays.length > 0) {
+      const start = new Date(`${this.calendarDays[0].iso}T00:00:00`);
+      const end = new Date(`${this.calendarDays[this.calendarDays.length - 1].iso}T00:00:00`);
+      const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+
+      if (sameMonth) {
+        const monthYear = end.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        return `semana del ${start.getDate()} al ${end.getDate()} de ${monthYear}`;
+      }
+
+      const startText = start.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+      const endText = end.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+      return `semana del ${startText} al ${endText}`;
+    }
+
+    const base = new Date();
+    base.setMonth(base.getMonth() + this.currentMonthOffset);
 
     return base.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
   }
@@ -785,16 +968,34 @@ export class PeluqueroComponent implements OnInit {
     });
   }
 
+  get todayIso(): string {
+    return this.toLocalDate(new Date());
+  }
+
   get kpis(): Array<{ title: string; value: string | number; hint: string }> {
+    const visibleAppointments = this.visibleAppointments;
     return [
-      { title: 'Citas', value: this.dayAppointments.length, hint: this.viewMode === 'month' ? 'Mes' : 'Periodo' },
-      { title: 'Clientes', value: new Set(this.dayAppointments.map(item => item.name)).size, hint: 'Activos' },
-      { title: 'Horario', value: this.timeSlots.length || '-', hint: this.workingHoursText },
+      { title: 'Citas', value: visibleAppointments.length, hint: this.viewMode === 'day' ? 'Dia' : this.viewMode === 'month' ? 'Mes' : 'Periodo' },
+      { title: 'Clientes', value: new Set(visibleAppointments.map(item => item.name)).size, hint: 'Activos' },
+      { title: 'Horario actual', value: this.workingHoursText, hint: '' },
     ];
   }
 
+  get bookingTimeSlots(): string[] {
+    return this.timeSlots.filter(time => !this.isPastDateTime(this.bookingDate, time));
+  }
+
   get nextAppointment(): DayAppointment | null {
-    return this.dayAppointments[0] || null;
+    return this.visibleAppointments[0] || null;
+  }
+
+  get nextAppointmentDateText(): string {
+    const iso = this.nextAppointment?.appointmentDate || this.selectedDay?.iso || this.todayIso;
+    return new Date(`${iso}T00:00:00`).toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
   }
 
   get currentRange(): { start: string; end: string } | null {
@@ -809,6 +1010,13 @@ export class PeluqueroComponent implements OnInit {
       return null;
     }
     return { start: this.calendarDays[0].iso, end: this.calendarDays[this.calendarDays.length - 1].iso };
+  }
+
+  get visibleAppointments(): DayAppointment[] {
+    if (this.viewMode === 'day' && this.selectedDay) {
+      return this.appointmentsByDay[this.selectedDay.iso] || [];
+    }
+    return this.dayAppointments;
   }
 
   getAppointmentsAt(day: CalendarDay | null, time: string): DayAppointment[] {
@@ -923,7 +1131,7 @@ export class PeluqueroComponent implements OnInit {
         this.workingDays = new Set(response.workingDays ?? []);
         this.workingDaysDraft = new Set(this.workingDays);
         this.morningStart = this.toHourMinute(response.morningStart || '10:00');
-        this.morningEnd = this.toHourMinute(response.morningEnd || '14:00');
+        this.morningEnd = this.toHourMinute(response.morningEnd || '13:45');
         this.afternoonStart = response.afternoonStart ? this.toHourMinute(response.afternoonStart) : '';
         this.afternoonEnd = response.afternoonEnd ? this.toHourMinute(response.afternoonEnd) : '';
         this.timeSlots = this.buildTimeSlots();
@@ -950,6 +1158,27 @@ export class PeluqueroComponent implements OnInit {
       },
       error: () => {
         this.users = [];
+      },
+    });
+  }
+
+  private loadBookingOccupiedTimes(): void {
+    const token = this.authService.getToken();
+    if (!token || !this.bookingDate) {
+      this.bookingOccupiedTimes.clear();
+      return;
+    }
+
+    this.reservasApiService.getOccupiedSlots(this.bookingDate, token).subscribe({
+      next: (times) => {
+        this.bookingOccupiedTimes = new Set((times ?? []).map(time => this.toHourMinute(time)));
+        if (this.bookingTime && this.isBookingSlotUnavailable(this.bookingTime)) {
+          this.bookingTime = '';
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.bookingOccupiedTimes.clear();
       },
     });
   }
@@ -998,7 +1227,7 @@ export class PeluqueroComponent implements OnInit {
 
   private buildDefaultTimeSlots(): string[] {
     return [
-      ...this.buildSlotsForRange('10:00', '14:00'),
+      ...this.buildSlotsForRange('10:00', '13:45'),
       ...this.buildSlotsForRange('15:00', '18:00'),
     ];
   }
@@ -1043,6 +1272,20 @@ export class PeluqueroComponent implements OnInit {
     return time.length === 5 ? `${time}:00` : time;
   }
 
+  private getApiErrorMessage(error: any, fallback: string): string {
+    const payload = error?.error;
+    if (payload?.message) {
+      return payload.message;
+    }
+    if (payload && typeof payload === 'object') {
+      const firstMessage = Object.values(payload).find(value => typeof value === 'string');
+      if (firstMessage) {
+        return firstMessage as string;
+      }
+    }
+    return fallback;
+  }
+
   private toHourMinute(time: string): string {
     return time.substring(0, 5);
   }
@@ -1060,6 +1303,15 @@ export class PeluqueroComponent implements OnInit {
     return hh * 60 + mm;
   }
 
+  private isQuarterHour(time: string): boolean {
+    return this.toMinutes(time) % 15 === 0;
+  }
+
+  private isTimeInsideLimits(time: string, min: string, max: string): boolean {
+    const minutes = this.toMinutes(time);
+    return minutes >= this.toMinutes(min) && minutes <= this.toMinutes(max);
+  }
+
   private refreshCalendarView(): void {
     if (this.viewMode === 'month') {
       this.buildMonth();
@@ -1067,5 +1319,37 @@ export class PeluqueroComponent implements OnInit {
     }
 
     this.updateCalendar();
+  }
+
+  private selectTodayInCurrentWeek(): void {
+    const today = this.todayIso;
+    const todayInCurrentWeek = this.calendarDays.find(day => day.iso === today);
+    if (todayInCurrentWeek) {
+      this.selectedDay = todayInCurrentWeek;
+    }
+  }
+
+  private moveSelectedDay(dayOffset: number): void {
+    const base = new Date(`${this.selectedDay?.iso || this.todayIso}T00:00:00`);
+    base.setDate(base.getDate() + dayOffset);
+    const targetIso = this.toLocalDate(base);
+
+    this.currentWeekOffset = this.getWeekOffsetFromToday(base);
+    this.updateCalendar();
+    this.selectedDay = this.calendarDays.find(day => day.iso === targetIso) || this.selectedDay;
+  }
+
+  private getWeekOffsetFromToday(date: Date): number {
+    const currentWeekStart = this.getWeekStart(new Date());
+    const targetWeekStart = this.getWeekStart(date);
+    const millisecondsPerWeek = 7 * 24 * 60 * 60 * 1000;
+    return Math.round((targetWeekStart.getTime() - currentWeekStart.getTime()) / millisecondsPerWeek);
+  }
+
+  private getWeekStart(date: Date): Date {
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    start.setDate(start.getDate() - start.getDay());
+    start.setHours(0, 0, 0, 0);
+    return start;
   }
 }

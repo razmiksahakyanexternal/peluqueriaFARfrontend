@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { OnInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -16,7 +16,11 @@ export class RegistroComponent implements OnInit {
   successMessage: string | null = null;
   isSubmitting = false;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn()) {
@@ -47,20 +51,33 @@ export class RegistroComponent implements OnInit {
       next: (response) => {
         this.successMessage = response.message || 'Cuenta creada. Revisa tu correo para verificarla.';
         this.isSubmitting = false;
+        this.cdr.detectChanges();
         if (response.verificationEmailSent === false && response.verificationUrl) {
           this.successMessage = `${this.successMessage} En desarrollo puedes verificarla aqui: ${response.verificationUrl}`;
+          this.cdr.detectChanges();
           return;
         }
         setTimeout(() => this.router.navigate(['/inicio-sesion'], { queryParams: { verificationSent: true } }), 1200);
       },
       error: (err) => {
+        if (err?.status === 500) {
+          this.errorMessage = null;
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
+          return;
+        }
+
         if (err?.error && typeof err.error === 'object') {
           const errors = Object.values(err.error).join('. ');
           this.errorMessage = errors || 'Error al registrar. Intenta nuevamente.';
         } else {
           this.errorMessage = err?.error?.message || 'Error al registrar. Intenta nuevamente.';
         }
+        if (this.errorMessage === 'El email ya está registrado') {
+          this.errorMessage = 'Ya existe una cuenta asociada a este correo.';
+        }
         this.isSubmitting = false;
+        this.cdr.detectChanges();
       }
     });
   }
