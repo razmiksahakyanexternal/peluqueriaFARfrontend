@@ -51,8 +51,11 @@
 .reservas-content {
   padding: 1.5rem;
   display: grid;
-  gap: 1.6rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
 }
+
 
 .calendar-section,
 .time-section {
@@ -111,6 +114,11 @@
 
 .time-section h3 {
   margin: 0;
+}
+
+.time-section {
+  padding-left: 1rem;
+  border-left: 1px solid #e0e6ed;
 }
 
 .time-btn {

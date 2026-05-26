@@ -673,4 +673,29 @@ export class ReservasComponent implements OnInit {
 
     return `${dayName}, ${day} de ${month} de ${year}${timeText}`;
   }
+
+  
+isPastTime(time: string): boolean {
+  if (!this.selectedDate) return false;
+
+  const now = new Date();
+  const selected = new Date(this.selectedDate);
+
+  // Solo aplicar si es HOY
+  const isToday =
+    now.getDate() === selected.getDate() &&
+    now.getMonth() === selected.getMonth() &&
+    now.getFullYear() === selected.getFullYear();
+
+  if (!isToday) return false;
+
+  // Convertir horas "10:15" → Date
+  const [hours, minutes] = time.split(':').map(Number);
+
+  const timeDate = new Date(selected);
+  timeDate.setHours(hours, minutes, 0, 0);
+
+  return timeDate <= now;
+}
+
 }
