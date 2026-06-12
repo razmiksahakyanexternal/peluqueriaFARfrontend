@@ -46,7 +46,9 @@ export class ReservasComponent implements OnInit {
   showMaxAppointmentsModal = false;
 
   get visibleHours(): string[] {
-    return this.availableHours.filter(time => !this.isTimeOccupied(time));
+    return this.availableHours.filter(time =>
+      !this.isTimeOccupied(time) && !this.isPastTime(time)
+    );
   }
 
   constructor(
@@ -225,6 +227,12 @@ export class ReservasComponent implements OnInit {
       return;
     }
 
+    if (this.isPastTime(this.selectedTime)) {
+      this.errorMessage = 'La hora seleccionada ya ha pasado.';
+      this.selectedTime = null;
+      return;
+    }
+
     this.errorMessage = null;
     this.successMessage = null;
     this.isSubmitting = true;
@@ -385,6 +393,10 @@ export class ReservasComponent implements OnInit {
 
   previousMonth(): void {
 
+    if (!this.canGoToPreviousMonth()) {
+      return;
+    }
+
     this.currentDate = new Date(
       this.currentDate.getFullYear(),
       this.currentDate.getMonth() - 1,
@@ -398,6 +410,22 @@ export class ReservasComponent implements OnInit {
     this.occupiedHours.clear();
 
     this.loadReservationSchedule();
+  }
+
+  canGoToPreviousMonth(): boolean {
+    const today = new Date();
+    const currentMonth = new Date(
+      this.currentDate.getFullYear(),
+      this.currentDate.getMonth(),
+      1
+    );
+    const thisMonth = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    );
+
+    return currentMonth > thisMonth;
   }
 
   // =========================
@@ -437,7 +465,7 @@ export class ReservasComponent implements OnInit {
             )
           );
 
-          if (this.selectedTime && this.isTimeOccupied(this.selectedTime)) {
+          if (this.selectedTime && !this.visibleHours.includes(this.selectedTime)) {
             this.selectedTime = null;
           }
 

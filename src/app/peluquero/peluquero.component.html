@@ -185,8 +185,11 @@
           <label for="bookingTime">Hora <span class="required-asterisk">*</span></label>
           <select id="bookingTime" [(ngModel)]="bookingTime" name="bookingTime" [class.error-input]="submitted && (!bookingTime || timeError)">
             <option value="">Seleccionar hora</option>
-            <option *ngFor="let slot of bookingTimeSlots" [value]="slot" [disabled]="isBookingSlotUnavailable(slot)">
-              {{ getBookingSlotLabel(slot) }}
+            <option value="" disabled *ngIf="bookingDate && bookingTimeSlots.length === 0">
+              No hay horas disponibles
+            </option>
+            <option *ngFor="let slot of bookingTimeSlots" [value]="slot">
+              {{ slot }}
             </option>
           </select>
           <p class="error-message" *ngIf="submitted && timeError">{{ timeError }}</p>

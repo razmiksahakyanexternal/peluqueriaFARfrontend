@@ -829,19 +829,97 @@
   }
 
   .agenda-sidebar {
+    display: flex;
+    min-height: auto;
+    padding: 0.85rem 1rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .sidebar-top {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .profile-card,
+  .next-card {
     display: none;
   }
 
-  .kpi-row,
-  .month-grid,
-  .month-weekdays {
+  .logout-btn {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .agenda-main {
+    height: auto;
+    min-height: calc(100vh - 74px);
+    overflow: visible;
+  }
+
+  .kpi-row {
     grid-template-columns: 1fr;
+  }
+
+  .calendar-wrapper {
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+
+  .calendar-grid,
+  .month-weekdays,
+  .month-grid {
+    min-width: 780px;
   }
 }
 
 @media (max-width: 720px) {
+  .agenda-page {
+    background: #f5f7f9;
+  }
+
+  .agenda-sidebar {
+    align-items: flex-start;
+  }
+
+  .brand-row {
+    min-width: 0;
+    padding-bottom: 0;
+  }
+
+  .brand-row h1 {
+    font-size: 1rem;
+  }
+
+  .brand-row p {
+    font-size: 0.82rem;
+  }
+
   .agenda-header,
-  .toolbar-row,
+  .toolbar-row {
+    margin: 0.75rem 0.75rem 0;
+  }
+
+  .kpi-row,
+  .calendar-wrapper {
+    margin: 0.75rem 0.75rem 0;
+  }
+
+  .agenda-header {
+    padding: 0.9rem;
+    align-items: stretch;
+  }
+
+  .agenda-header h2 {
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+
   .toolbar-left,
   .form-actions,
   .confirm-actions,
@@ -851,17 +929,148 @@
     grid-template-columns: 1fr;
   }
 
+  .view-switch,
+  .calendar-nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .view-btn,
+  .calendar-nav button,
+  .add-btn,
+  .block-btn,
+  .cancel-btn,
+  .confirm-btn,
+  .ghost-btn {
+    width: 100%;
+    min-height: 42px;
+    padding: 0.6rem 0.65rem;
+    font-size: 0.92rem;
+  }
+
+  .toolbar-left {
+    width: 100%;
+  }
+
+  .kpi-card {
+    min-height: auto;
+    padding: 0.9rem 1rem;
+  }
+
+  .kpi-card strong {
+    font-size: 1.85rem;
+  }
+
+  .kpi-card strong.schedule-value {
+    font-size: 1.05rem;
+  }
+
   .schedule-grid,
   .schedule-inputs {
     grid-template-columns: 1fr;
   }
 
   .calendar-grid {
-    grid-template-columns: 70px repeat(7, minmax(90px, 1fr));
+    grid-template-columns: 64px repeat(7, minmax(92px, 1fr));
   }
 
   .day-view {
-    grid-template-columns: 70px minmax(220px, 1fr);
+    min-width: 0;
+    grid-template-columns: 64px minmax(220px, 1fr);
+  }
+
+  .time-head,
+  .day-head {
+    min-height: 58px;
+  }
+
+  .day-head {
+    padding: 0.7rem 0.45rem;
+  }
+
+  .time-cell,
+  .slot-cell {
+    min-height: 48px;
+  }
+
+  .month-weekdays,
+  .month-grid {
+    min-width: 680px;
+  }
+
+  .month-day {
+    min-height: 96px;
+  }
+
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 0.75rem;
+  }
+
+  .modal-content {
+    max-height: calc(100vh - 1.5rem);
+  }
+
+  .booking-modal-content {
+    min-height: 0;
+  }
+
+  .booking-modal-content .booking-form {
+    min-height: 0;
+  }
+
+  .modal-header,
+  .booking-form,
+  .confirm-actions,
+  .blocked-list {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .blocked-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .blocked-row__actions {
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 460px) {
+  .agenda-sidebar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .logout-btn {
+    width: 100%;
+  }
+
+  .agenda-main {
+    min-height: auto;
+  }
+
+  .agenda-header,
+  .toolbar-row,
+  .kpi-row,
+  .calendar-wrapper {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .view-switch,
+  .calendar-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-grid,
+  .month-weekdays,
+  .month-grid {
+    min-width: 620px;
   }
 }
 

@@ -7,13 +7,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 2rem 1rem;
   background: linear-gradient(135deg, #f5f7f9 0%, #e9edf1 100%);
 }
 
 .reservas-card {
   width: 100%;
-  max-width: 500px;
+  max-width: 920px;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
@@ -49,10 +49,10 @@
 }
 
 .reservas-content {
-  padding: 1.5rem;
+  padding: 2rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 0.9fr);
+  gap: 2rem 2.25rem;
   align-items: start;
 }
 
@@ -60,36 +60,67 @@
 .calendar-section,
 .time-section {
   display: grid;
-  gap: 0.95rem;
+  gap: 1.15rem;
 }
 
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.75rem;
+}
+
+.calendar-header h2 {
+  margin: 0;
+  color: #26313f;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.nav-btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid #dbe1e8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #3f4a57;
+  cursor: pointer;
+}
+
+.nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
 .day-label {
   text-align: center;
   font-size: 0.85rem;
+  font-weight: 700;
   color: #8190a1;
+  padding-bottom: 0.15rem;
 }
 
 .calendar-day,
 .calendar-empty {
   aspect-ratio: 1;
-  border-radius: 6px;
+  min-width: 0;
+  border-radius: 8px;
 }
 
 .calendar-day {
   border: 1px solid #e0e6ed;
   background: #f7f9fb;
+  color: #26313f;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .calendar-day.disabled,
@@ -108,24 +139,34 @@
 
 .time-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 0.75rem;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
 }
 
 .time-section h3 {
   margin: 0;
+  color: #26313f;
+  font-size: 1.05rem;
 }
 
 .time-section {
-  padding-left: 1rem;
+  min-width: 0;
+  padding-left: 2rem;
   border-left: 1px solid #e0e6ed;
 }
 
 .time-btn {
   border: 1px solid #dbe1e8;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #f7f9fb;
-  padding: 0.45rem 0.25rem;
+  min-height: 2.45rem;
+  padding: 0.55rem 0.4rem;
+  color: #26313f;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .time-btn.selected {
@@ -146,12 +187,12 @@
 .volver-btn {
   width: 100%;
   padding: 0.95rem;
-  margin-top: 0.45rem;
   background: #5d9f97;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #fff;
   font-weight: 700;
+  cursor: pointer;
 }
 
 .confirm-btn:disabled {
@@ -191,11 +232,23 @@
   text-align: center;
 }
 
+.reservation-footer {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 0.5rem;
+}
+
 .note,
 .confirmation-note,
 .confirmation-date {
   margin: 0;
   color: #8190a1;
+}
+
+.note {
+  text-align: center;
+  line-height: 1.45;
 }
 
 .confirmation-date {
@@ -359,4 +412,62 @@
 .confirm-actions .cancel-btn:focus-visible {
   outline: 2px solid #0f172a;
   outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .reservas-container {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .reservas-card {
+    max-width: 520px;
+  }
+
+  .reservas-header {
+    padding: 1.2rem 3.25rem 1.2rem 1.25rem;
+    justify-content: flex-start;
+  }
+
+  .reservas-header h1 {
+    font-size: 1.45rem;
+  }
+
+  .close-btn {
+    right: 1.15rem;
+  }
+
+  .reservas-content {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+    padding: 1.25rem;
+  }
+
+  .time-section {
+    padding-left: 0;
+    padding-top: 1.5rem;
+    border-left: 0;
+    border-top: 1px solid #e0e6ed;
+  }
+
+  .time-grid {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .calendar-grid {
+    gap: 0.35rem;
+  }
+
+  .day-label {
+    font-size: 0.78rem;
+  }
+
+  .time-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

@@ -982,7 +982,27 @@ export class PeluqueroComponent implements OnInit {
   }
 
   get bookingTimeSlots(): string[] {
-    return this.timeSlots.filter(time => !this.isPastDateTime(this.bookingDate, time));
+    if (!this.bookingDate || this.isPastDate(this.bookingDate) || this.isNonWorkingDate(this.bookingDate)) {
+      return [];
+    }
+
+    return this.timeSlots.filter(time => !this.isBookingSlotUnavailable(time));
+  }
+
+  get bookingDateUnavailableMessage(): string {
+    if (!this.bookingDate) {
+      return '';
+    }
+
+    if (this.isPastDate(this.bookingDate)) {
+      return 'No se puede reservar en una fecha anterior a hoy';
+    }
+
+    if (this.isNonWorkingDate(this.bookingDate)) {
+      return 'Dia no laborable';
+    }
+
+    return '';
   }
 
   get nextAppointment(): DayAppointment | null {
