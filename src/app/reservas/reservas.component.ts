@@ -46,7 +46,9 @@ export class ReservasComponent implements OnInit {
   showMaxAppointmentsModal = false;
 
   get visibleHours(): string[] {
-    return this.availableHours.filter(time => !this.isTimeOccupied(time));
+    return this.availableHours.filter(time =>
+      !this.isTimeOccupied(time) && !this.isPastTime(time)
+    );
   }
 
   constructor(
@@ -225,6 +227,12 @@ export class ReservasComponent implements OnInit {
       return;
     }
 
+    if (this.isPastTime(this.selectedTime)) {
+      this.errorMessage = 'La hora seleccionada ya ha pasado.';
+      this.selectedTime = null;
+      return;
+    }
+
     this.errorMessage = null;
     this.successMessage = null;
     this.isSubmitting = true;
@@ -385,6 +393,10 @@ export class ReservasComponent implements OnInit {
 
   previousMonth(): void {
 
+    if (!this.canGoToPreviousMonth()) {
+      return;
+    }
+
     this.currentDate = new Date(
       this.currentDate.getFullYear(),
       this.currentDate.getMonth() - 1,
@@ -398,6 +410,22 @@ export class ReservasComponent implements OnInit {
     this.occupiedHours.clear();
 
     this.loadReservationSchedule();
+  }
+
+  canGoToPreviousMonth(): boolean {
+    const today = new Date();
+    const currentMonth = new Date(
+      this.currentDate.getFullYear(),
+      this.currentDate.getMonth(),
+      1
+    );
+    const thisMonth = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    );
+
+    return currentMonth > thisMonth;
   }
 
   // =========================
@@ -437,7 +465,7 @@ export class ReservasComponent implements OnInit {
             )
           );
 
-          if (this.selectedTime && this.isTimeOccupied(this.selectedTime)) {
+          if (this.selectedTime && !this.visibleHours.includes(this.selectedTime)) {
             this.selectedTime = null;
           }
 
@@ -673,4 +701,29 @@ export class ReservasComponent implements OnInit {
 
     return `${dayName}, ${day} de ${month} de ${year}${timeText}`;
   }
+
+  
+isPastTime(time: string): boolean {
+  if (!this.selectedDate) return false;
+
+  const now = new Date();
+  const selected = new Date(this.selectedDate);
+
+  // Solo aplicar si es HOY
+  const isToday =
+    now.getDate() === selected.getDate() &&
+    now.getMonth() === selected.getMonth() &&
+    now.getFullYear() === selected.getFullYear();
+
+  if (!isToday) return false;
+
+  // Convertir horas "10:15" → Date
+  const [hours, minutes] = time.split(':').map(Number);
+
+  const timeDate = new Date(selected);
+  timeDate.setHours(hours, minutes, 0, 0);
+
+  return timeDate <= now;
+}
+
 }

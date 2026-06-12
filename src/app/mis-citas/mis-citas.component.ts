@@ -89,7 +89,9 @@ export class MisCitasComponent implements OnInit {
   private loadAppointments(token: string): void {
     this.reservasApiService.getMyAppointments(token).subscribe({
       next: (appointments) => {
-        this.appointments = this.normalizeAppointments(appointments);
+        this.appointments = this.sortAppointmentsByNearestDate(
+          this.normalizeAppointments(appointments)
+        );
         this.errorMessage = null;
         this.successMessage = null;
         this.cdr.detectChanges();
@@ -125,5 +127,23 @@ export class MisCitasComponent implements OnInit {
     }
 
     return [];
+  }
+
+  private sortAppointmentsByNearestDate(appointments: AppointmentResponse[]): AppointmentResponse[] {
+    return [...appointments].sort((a, b) => {
+      const firstDateTime = `${a.appointmentDate}T${this.normalizeTime(a.startTime)}`;
+      const secondDateTime = `${b.appointmentDate}T${this.normalizeTime(b.startTime)}`;
+
+      return firstDateTime.localeCompare(secondDateTime);
+    });
+  }
+
+  private normalizeTime(time: string | null | undefined): string {
+    if (!time) {
+      return '00:00:00';
+    }
+
+    const [hours = '00', minutes = '00', seconds = '00'] = time.split(':');
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
   }
 }

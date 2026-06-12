@@ -18,7 +18,7 @@
       <div class="reservas-content">
         <div class="calendar-section">
           <div class="calendar-header">
-            <button type="button" class="nav-btn" (click)="previousMonth()">&lt;</button>
+            <button type="button" class="nav-btn" (click)="previousMonth()" [disabled]="!canGoToPreviousMonth()">&lt;</button>
             <h2>{{ getMonthYear() }}</h2>
             <button type="button" class="nav-btn" (click)="nextMonth()">&gt;</button>
           </div>
@@ -64,17 +64,19 @@
           </div>
         </div>
 
-        <button
-          type="button"
-          class="confirm-btn"
-          [disabled]="!selectedDate || !selectedTime"
-          (click)="confirmBooking()">
-          Confirmar Cita
-        </button>
+        <div class="reservation-footer">
+          <button
+            type="button"
+            class="confirm-btn"
+            [disabled]="!selectedDate || !selectedTime"
+            (click)="confirmBooking()">
+            Confirmar Cita
+          </button>
 
-        <p class="error-copy" *ngIf="errorMessage">{{ errorMessage }}</p>
+          <p class="error-copy" *ngIf="errorMessage">{{ errorMessage }}</p>
 
-        <p class="note">Solo se muestran los días y horas disponibles del peluquero. Cada cita dura 15 minutos.</p>
+          <p class="note">Solo se muestran los días y horas disponibles del peluquero. Cada cita dura 15 minutos.</p>
+        </div>
       </div>
     </div>
   </ng-template>
